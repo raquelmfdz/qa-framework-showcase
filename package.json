@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "app",
+    "web",
     "tests",
-    "a11y"
+    "non-functional-tests/a11y"
   ],
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -17,20 +17,27 @@
     ]
   },
   "scripts": {
-    "dev": "npm run dev --workspace=app",
+    "dev": "npm run dev --workspace=web",
+    "build": "npm run build --workspace=web",
+    "start": "npm run start --workspace=web",
+    "prisma:migrate": "npm run prisma:migrate --workspace=web",
+    "prisma:seed": "npm run prisma:seed --workspace=web",
     "test:unit": "npm run test:unit --workspace=tests",
     "test:integration": "npm run test:integration --workspace=tests",
     "test:e2e": "npm run test:e2e --workspace=tests",
-    "test:a11y": "npm run test:a11y --workspace=a11y",
+    "test:a11y": "npm run test:a11y --workspace=non-functional-tests/a11y",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
     "prepare": "husky"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^9.39.4",
     "@typescript-eslint/eslint-plugin": "^8.61.0",
     "@typescript-eslint/parser": "^8.61.0",
-    "eslint": "^10.4.1",
+    "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
     "prettier": "^3.8.4",
