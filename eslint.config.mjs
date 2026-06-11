@@ -1,38 +1,43 @@
+// eslint.config.mjs
 import { defineConfig } from 'eslint/config';
-import typescriptEslint from '@typescript-eslint/eslint-plugin';
-import globals from 'globals';
-import tsParser from '@typescript-eslint/parser';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
-import { FlatCompat } from '@eslint/eslintrc';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+import tseslint from 'typescript-eslint';
+import globals from 'globals';
 
 export default defineConfig([
+  // 1. Archivos que ESLint debe ignorar por completo
   {
-    extends: compat.extends(
-      'eslint:recommended',
-      'plugin:@typescript-eslint/recommended',
-      'prettier'
-    ),
+    ignores: ['**/.next/**', '**/node_modules/**', '**/dist/**']
+  },
 
-    plugins: {
-      '@typescript-eslint': typescriptEslint,
-    },
+  // 2. Configuración base recomendada para JavaScript y TypeScript
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
 
+  // 3. Tus personalizaciones para TypeScript (.ts y .tsx)
+  {
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       globals: {
+        ...globals.browser,
         ...globals.node,
+        React: 'readonly',
       },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': 'off',
+    },
+  },
 
-      parser: tsParser,
+  // 4. NUEVO: Configuración para permitir archivos CommonJS (.cjs) como Tailwind y PostCSS
+  {
+    files: ['**/*.cjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node, // Esto le dice a ESLint que "module" y "require" son válidos aquí
+      },
     },
   },
 ]);

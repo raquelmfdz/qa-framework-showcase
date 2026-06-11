@@ -292,7 +292,7 @@
     "@types/prop-types" "*"
     csstype "^3.2.2"
 
-"@typescript-eslint/eslint-plugin@^8.61.0":
+"@typescript-eslint/eslint-plugin@^8.61.0", "@typescript-eslint/eslint-plugin@8.61.0":
   version "8.61.0"
   resolved "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.61.0.tgz"
   integrity sha512-bFNvl9ZczlVb+wR2Akszf3gHfKVj/8WanXaGJ3UstTA7brNKg0cNdk6X1Psu5V7MZ2oQtzZKOEzIUehaoxbDGw==
@@ -306,7 +306,7 @@
     natural-compare "^1.4.0"
     ts-api-utils "^2.5.0"
 
-"@typescript-eslint/parser@^8.61.0":
+"@typescript-eslint/parser@^8.61.0", "@typescript-eslint/parser@8.61.0":
   version "8.61.0"
   resolved "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.61.0.tgz"
   integrity sha512-5B7PfA2e1NQGCnDHd/0lW7W3gvp3d59Ryw54FYO8Uswxo9f6ikw3AZV+Xj/TvpImmpsiYyUqAfhC6kJID1jF6w==
@@ -2061,6 +2061,16 @@ type-check@^0.4.0, type-check@~0.4.0:
   integrity sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==
   dependencies:
     prelude-ls "^1.2.1"
+
+typescript-eslint@^8.61.0:
+  version "8.61.0"
+  resolved "https://registry.npmjs.org/typescript-eslint/-/typescript-eslint-8.61.0.tgz"
+  integrity sha512-8y31Rd0eGTrDKqhy6vT0HtzhN+YLjQizwX3aA3hPXP/ynSfnrBXcQY5IzsP9/DM7+klX4IUncZZjkchP0z+rUw==
+  dependencies:
+    "@typescript-eslint/eslint-plugin" "8.61.0"
+    "@typescript-eslint/parser" "8.61.0"
+    "@typescript-eslint/typescript-estree" "8.61.0"
+    "@typescript-eslint/utils" "8.61.0"
 
 typescript@^5.5.4:
   version "5.9.3"
