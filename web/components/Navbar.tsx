@@ -1,12 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { useEffect, useRef, useState } from 'react';
+import { signOut, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [count, setCount] = useState<number>(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchCount() {
@@ -14,11 +18,29 @@ export default function Navbar() {
       const items = await response.json();
       setCount(items.reduce((sum: number, item: any) => sum + item.quantity, 0));
     }
-
     fetchCount();
     window.addEventListener('cartUpdated', fetchCount);
     return () => window.removeEventListener('cartUpdated', fetchCount);
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    await signOut({ redirect: false });
+    router.push('/login');
+  };
+
+  const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'ADMIN';
 
   return (
     <header className="glass-panel sticky top-0 z-30 border-b border-slate-700/60">
@@ -31,18 +53,22 @@ export default function Navbar() {
             Demo Store
           </Link>
         </div>
+
         <ul className="flex flex-wrap items-center gap-3">
-          {session?.user ? (
+          {/* Orders link — only when logged in */}
+          {session?.user && (
             <li>
               <Link
-                href="/orders"
+                href={isAdmin ? '/admin/orders' : '/orders'}
                 data-testid="nav-my-orders"
-                className="text-slate-700 hover:text-slate-900"
+                className="rounded-full border border-orange-500/20 bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-100 transition hover:bg-orange-500/20"
               >
-                My Orders
+                {isAdmin ? 'View Client Orders' : 'My Orders'}
               </Link>
             </li>
-          ) : null}
+          )}
+
+          {/* Cart */}
           <li>
             <Link
               href="/cart"
@@ -53,15 +79,56 @@ export default function Navbar() {
               Cart ({count})
             </Link>
           </li>
+
+          {/* Login button OR user dropdown */}
           <li>
-            <button
-              data-testid="nav-login"
-              onClick={() => signIn('credentials')}
-              className="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-orange-400"
-              type="button"
-            >
-              Login
-            </button>
+            {session?.user ? (
+              <div className="relative" ref={menuRef}>
+                <button
+                  data-testid="nav-user-menu"
+                  onClick={() => setMenuOpen((prev) => !prev)}
+                  className="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-orange-400"
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded={menuOpen}
+                >
+                  {session.user.name ?? session.user.email}
+                </button>
+
+                {menuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-2 w-44 rounded-xl border border-slate-700 bg-slate-900 py-1 shadow-lg"
+                  >
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push('/profile');
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-orange-100 hover:bg-slate-800"
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      role="menuitem"
+                      onClick={handleLogout}
+                      className="w-full px-4 py-2 text-left text-sm text-orange-100 hover:bg-slate-800"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                data-testid="nav-login"
+                className="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-orange-400"
+              >
+                Login
+              </Link>
+            )}
           </li>
         </ul>
       </nav>

@@ -52,20 +52,6 @@ export default function HomePage({
               modern shopping flow.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/cart"
-              className="rounded-full bg-orange-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-orange-300"
-            >
-              View cart
-            </Link>
-            <Link
-              href="/orders"
-              className="rounded-full border border-orange-500/20 bg-white/5 px-5 py-3 text-sm font-semibold text-orange-100 transition hover:bg-white/10"
-            >
-              Order history
-            </Link>
-          </div>
         </div>
 
         <div className="mt-10 space-y-4">

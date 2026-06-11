@@ -8,12 +8,11 @@ interface DbUser {
   email: string;
   password_hash: string;
   role: string;
+  name: string | null;
 }
 
 export const authOptions: NextAuthOptions = {
-  session: {
-    strategy: 'jwt',
-  },
+  session: { strategy: 'jwt' },
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -22,47 +21,47 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         const user = db
-          .prepare('SELECT id, email, password_hash, role FROM users WHERE email = ?')
+          .prepare('SELECT id, email, password_hash, role, name FROM users WHERE email = ?')
           .get(credentials.email.toLowerCase().trim()) as DbUser | undefined;
 
         if (!user) return null;
+        if (!bcrypt.compareSync(credentials.password, user.password_hash)) return null;
 
-        const passwordValid = bcrypt.compareSync(credentials.password, user.password_hash);
-        if (!passwordValid) return null;
-
-        // This object is encoded into the JWT token
         return {
           id: String(user.id),
           email: user.email,
+          // name will be null if not set — navbar falls back to email in that case
+          name: user.name ?? null,
           role: user.role,
         };
       },
     }),
   ],
   callbacks: {
-    // Persist id and role into the token on sign in
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // On sign in, persist id, role and name into the token
       if (user) {
         token.id = user.id;
-        token.role = (user as { id: string; role: string }).role;
+        token.role = (user as { role: string }).role;
+        token.name = user.name ?? null;
+      }
+      // When update() is called from the profile page, refresh name in token
+      if (trigger === 'update' && session?.name !== undefined) {
+        token.name = session.name;
       }
       return token;
     },
-    // Expose id and role on the session object
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.name = token.name as string | null;
       }
       return session;
     },
   },
-  pages: {
-    signIn: '/login',
-  },
+  pages: { signIn: '/login' },
 };

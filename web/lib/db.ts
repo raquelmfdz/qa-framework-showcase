@@ -59,9 +59,19 @@ for (const sql of migrations) {
   db.prepare(sql).run();
 }
 
-const productCount = (
-  db.prepare('SELECT COUNT(*) AS count FROM products').get() as { count: number }
-).count;
+// Add new user columns if they don't exist yet (safe to run on existing DBs)
+const userColumns = (db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map(
+  (c) => c.name
+);
+if (!userColumns.includes('name')) db.prepare('ALTER TABLE users ADD COLUMN name TEXT').run();
+if (!userColumns.includes('last_name'))
+  db.prepare('ALTER TABLE users ADD COLUMN last_name TEXT').run();
+if (!userColumns.includes('zip_code'))
+  db.prepare('ALTER TABLE users ADD COLUMN zip_code TEXT').run();
+if (!userColumns.includes('address')) db.prepare('ALTER TABLE users ADD COLUMN address TEXT').run();
+
+// ─── Products ────────────────────────────────────────────────────────────────
+
 const products = [
   {
     name: 'Mountain Backpack',
@@ -176,7 +186,7 @@ const products = [
 const insertProduct = db.prepare(
   'INSERT INTO products (name, description, price, stock, image_url, category) VALUES (?, ?, ?, ?, ?, ?)'
 );
-const updateProductImage = db.prepare(
+const updateProduct = db.prepare(
   'UPDATE products SET description = ?, price = ?, stock = ?, image_url = ?, category = ? WHERE id = ?'
 );
 
@@ -194,7 +204,7 @@ for (const product of products) {
       product.category
     );
   } else if (existing.image_url !== product.image_url) {
-    updateProductImage.run(
+    updateProduct.run(
       product.description,
       product.price,
       product.stock,
@@ -205,20 +215,50 @@ for (const product of products) {
   }
 }
 
+// ─── Users ────────────────────────────────────────────────────────────────────
+
 const userCount = (db.prepare('SELECT COUNT(*) AS count FROM users').get() as { count: number })
   .count;
+
 if (userCount === 0) {
   const passwordHash = bcrypt.hashSync('Password1!', 10);
-  db.prepare('INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)').run(
+
+  db.prepare(
+    'INSERT INTO users (email, password_hash, role, name, last_name, zip_code, address) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(
     'admin@example.com',
     passwordHash,
-    'admin'
+    'admin',
+    'Admin',
+    'McAdminface',
+    '00001',
+    '1 Control Panel Avenue, Dashboard City'
   );
-  db.prepare('INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)').run(
+
+  db.prepare(
+    'INSERT INTO users (email, password_hash, role, name, last_name, zip_code, address) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(
     'user@example.com',
     passwordHash,
-    'USER'
+    'USER',
+    'Regular',
+    'McUserton',
+    '12345',
+    '42 Ordinary Street, Normaltown'
   );
+} else {
+  // If users already exist but were seeded without the new fields, backfill them
+  db.prepare(
+    `UPDATE users SET name = 'Admin', last_name = 'McAdminface', zip_code = '00001',
+     address = '1 Control Panel Avenue, Dashboard City'
+     WHERE email = 'admin@example.com' AND (name IS NULL OR name = '')`
+  ).run();
+
+  db.prepare(
+    `UPDATE users SET name = 'Regular', last_name = 'McUserton', zip_code = '12345',
+     address = '42 Ordinary Street, Normaltown'
+     WHERE email = 'user@example.com' AND (name IS NULL OR name = '')`
+  ).run();
 }
 
 export { db };

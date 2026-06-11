@@ -1,23 +1,32 @@
 import { db } from '../../../../lib/db';
 
+// Proper types instead of any — matches the DB schema exactly
+interface OrderRow {
+  id: number;
+  total: number;
+  created_at: string;
+  status: string;
+  customer_name: string;
+  customer_last_name: string;
+  customer_email: string;
+  customer_zip_code: string;
+  shipping_address: string;
+}
+
+interface OrderItemRow {
+  quantity: number;
+  unit_price: number;
+  name: string;
+}
+
 export default function OrderSuccessPage({ params }: { params: { orderId: string } }) {
   const order = db
     .prepare(
-      'SELECT id, total, created_at, status, customer_name, customer_last_name, customer_email, customer_zip_code, shipping_address FROM orders WHERE id = ?'
+      `SELECT id, total, created_at, status, customer_name, customer_last_name,
+       customer_email, customer_zip_code, shipping_address
+       FROM orders WHERE id = ?`
     )
-    .get(Number(params.orderId)) as
-    | {
-        id: number;
-        total: number;
-        created_at: string;
-        status: string;
-        customer_name: string;
-        customer_last_name: string;
-        customer_email: string;
-        customer_zip_code: string;
-        shipping_address: string;
-      }
-    | undefined;
+    .get(Number(params.orderId)) as OrderRow | undefined;
 
   if (!order) {
     return (
@@ -29,14 +38,17 @@ export default function OrderSuccessPage({ params }: { params: { orderId: string
 
   const items = db
     .prepare(
-      `SELECT oi.quantity, oi.unit_price, p.name FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?`
+      `SELECT oi.quantity, oi.unit_price, p.name
+       FROM order_items oi
+       JOIN products p ON oi.product_id = p.id
+       WHERE oi.order_id = ?`
     )
-    .all(order.id);
+    .all(order.id) as OrderItemRow[];
 
   return (
     <div className="space-y-6">
       <div className="glass-panel rounded-[28px] border border-orange-500/10 p-6 shadow-2xl shadow-orange-950/20">
-        <h1 className="text-3xl font-semibold text-slate-100">✓ Order placed successfully</h1>
+        <h1 className="text-3xl font-semibold text-slate-100">Order placed successfully</h1>
         <p className="mt-2 text-slate-300">
           Thank you for your purchase! Your order number is{' '}
           <span className="font-bold text-orange-200">#{order.id}</span>
@@ -84,11 +96,11 @@ export default function OrderSuccessPage({ params }: { params: { orderId: string
       <div className="glass-panel rounded-[28px] border border-orange-500/10 p-6 shadow-2xl shadow-orange-950/20">
         <h2 className="text-lg font-semibold text-slate-100">Order Items</h2>
         <ul className="mt-4 space-y-3">
-          {(items as any[]).map((item: any, index: number) => (
+          {items.map((item, index) => (
             <li key={index} className="rounded-lg bg-slate-950/40 p-3">
               <div className="flex items-center justify-between">
                 <span className="text-slate-200">{item.name}</span>
-                <span className="text-orange-200 font-semibold">
+                <span className="font-semibold text-orange-200">
                   €{(item.unit_price * item.quantity).toFixed(2)}
                 </span>
               </div>

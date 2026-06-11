@@ -1,8 +1,23 @@
 'use client';
 
-import { ChangeEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function ProductCard({ product }: { product: any }) {
+// Matches the Product interface in ProductGrid — keep these in sync
+interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image_url: string;
+}
+
+interface CartItem {
+  product_id: number;
+  quantity: number;
+}
+
+export default function ProductCard({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(0);
   const [inputValue, setInputValue] = useState('1');
   const [loading, setLoading] = useState(false);
@@ -11,13 +26,12 @@ export default function ProductCard({ product }: { product: any }) {
     async function loadCartItem() {
       const response = await fetch('/api/cart');
       if (!response.ok) return;
-      const items = await response.json();
-      const currentItem = items.find((item: any) => item.product_id === product.id);
+      const items: CartItem[] = await response.json();
+      const currentItem = items.find((item) => item.product_id === product.id);
       const currentQuantity = currentItem?.quantity ?? 0;
       setQuantity(currentQuantity);
       setInputValue(String(Math.max(1, currentQuantity)));
     }
-
     loadCartItem();
   }, [product.id]);
 
@@ -43,7 +57,6 @@ export default function ProductCard({ product }: { product: any }) {
           body: JSON.stringify({ productId: product.id, quantity: newQuantity }),
         });
       }
-
       setQuantity(newQuantity);
       setInputValue(String(Math.max(1, newQuantity)));
       window.dispatchEvent(new Event('cartUpdated'));
@@ -55,16 +68,13 @@ export default function ProductCard({ product }: { product: any }) {
   function handleAdd() {
     syncQuantity(quantity + 1);
   }
-
   function handleRemove() {
     syncQuantity(Math.max(0, quantity - 1));
   }
 
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const nextValue = event.target.value;
-    if (/^\d*$/.test(nextValue)) {
-      setInputValue(nextValue);
-    }
+    if (/^\d*$/.test(nextValue)) setInputValue(nextValue);
   }
 
   function handleInputBlur() {
@@ -107,6 +117,7 @@ export default function ProductCard({ product }: { product: any }) {
                 type="button"
                 onClick={handleRemove}
                 disabled={loading}
+                aria-label={`Decrease quantity for ${product.name}`}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-lg font-bold text-orange-100 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 −
@@ -123,6 +134,7 @@ export default function ProductCard({ product }: { product: any }) {
                 type="button"
                 onClick={handleAdd}
                 disabled={loading}
+                aria-label={`Increase quantity for ${product.name}`}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-orange-400 text-lg font-bold text-slate-950 transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 +

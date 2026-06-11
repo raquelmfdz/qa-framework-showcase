@@ -23,24 +23,42 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Load cart
   useEffect(() => {
     async function loadCart() {
       const response = await fetch('/api/cart');
-      if (response.ok) {
-        const data = await response.json();
-        setItems(data);
-      }
+      if (response.ok) setItems(await response.json());
     }
     loadCart();
   }, []);
 
+  // Autopopulate from profile when logged in.
+  // Fetches /api/profile so we get last_name and zip_code saved via Edit Profile,
+  // falling back to whatever is in the session token if the profile fields are empty.
   useEffect(() => {
-    if (session?.user?.email) {
-      setEmail(session.user.email);
-      const [name, surname] = (session.user.name || '').split(' ');
-      if (name) setFirstName(name);
-      if (surname) setLastName(surname);
+    if (!session?.user) return;
+
+    async function loadProfile() {
+      const res = await fetch('/api/profile');
+      if (res.ok) {
+        const data = await res.json();
+        // Email always comes from the session (cannot be changed)
+        setEmail(session!.user.email ?? '');
+        // Use saved profile values; fall back to session name if profile name not set yet
+        setFirstName(data.name || session!.user.name?.split(' ')[0] || '');
+        setLastName(data.last_name || session!.user.name?.split(' ')[1] || '');
+        setZipCode(data.zip_code || '');
+        setAddress(data.address || '');
+      } else {
+        // Profile fetch failed — fall back to session data only
+        setEmail(session!.user.email ?? '');
+        const [name, surname] = (session!.user.name || '').split(' ');
+        if (name) setFirstName(name);
+        if (surname) setLastName(surname);
+      }
     }
+
+    loadProfile();
   }, [session]);
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -74,8 +92,7 @@ export default function CheckoutPage() {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      setMessage(error || 'Unable to complete checkout.');
+      setMessage((await response.text()) || 'Unable to complete checkout.');
       setSubmitting(false);
       return;
     }
@@ -106,7 +123,7 @@ export default function CheckoutPage() {
                   <span className="text-slate-200">
                     {item.name} × {item.quantity}
                   </span>
-                  <span className="text-orange-200 font-semibold">
+                  <span className="font-semibold text-orange-200">
                     €{(item.price * item.quantity).toFixed(2)}
                   </span>
                 </li>
@@ -122,7 +139,8 @@ export default function CheckoutPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="glass-panel rounded-[28px] border border-orange-500/10 bg-slate-950/80 p-6 shadow-2xl shadow-orange-950/20 space-y-4"
+        data-testid="guest-checkout-form"
+        className="glass-panel space-y-4 rounded-[28px] border border-orange-500/10 bg-slate-950/80 p-6 shadow-2xl shadow-orange-950/20"
       >
         <h2 className="text-lg font-semibold text-slate-100">Shipping Information</h2>
 
@@ -135,7 +153,7 @@ export default function CheckoutPage() {
               id="firstName"
               type="text"
               value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
+              onChange={(e) => setFirstName(e.target.value)}
               className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
               required
               data-testid="checkout-first-name"
@@ -149,7 +167,7 @@ export default function CheckoutPage() {
               id="lastName"
               type="text"
               value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
+              onChange={(e) => setLastName(e.target.value)}
               className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
               required
               data-testid="checkout-last-name"
@@ -165,7 +183,7 @@ export default function CheckoutPage() {
             id="email"
             type="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
             data-testid="checkout-email"
@@ -180,7 +198,7 @@ export default function CheckoutPage() {
             id="zipCode"
             type="text"
             value={zipCode}
-            onChange={(event) => setZipCode(event.target.value)}
+            onChange={(e) => setZipCode(e.target.value)}
             className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
             data-testid="checkout-zip-code"
@@ -194,7 +212,7 @@ export default function CheckoutPage() {
           <textarea
             id="address"
             value={address}
-            onChange={(event) => setAddress(event.target.value)}
+            onChange={(e) => setAddress(e.target.value)}
             rows={3}
             className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
@@ -202,16 +220,17 @@ export default function CheckoutPage() {
           />
         </div>
 
-        {message ? (
-          <p className="text-sm text-orange-200" data-testid="checkout-error">
+        {message && (
+          <p role="alert" className="text-sm text-orange-200" data-testid="checkout-error">
             {message}
           </p>
-        ) : null}
+        )}
+
         <button
           type="submit"
           disabled={submitting || items.length === 0}
-          className="w-full rounded-full bg-orange-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:bg-orange-600"
           data-testid="checkout-submit"
+          className="w-full rounded-full bg-orange-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:bg-orange-600"
         >
           {submitting ? 'Placing order…' : 'Place order'}
         </button>

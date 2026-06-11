@@ -7,3 +7,25 @@ playwright-report/
 test-results/
 axe-reports/
 *.db
+*.Identifier
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# k6 reports
+load/results/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
