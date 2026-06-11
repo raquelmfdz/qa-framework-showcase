@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 interface Order {
   id: number;
   total: number;
-  order_date: string;
+  created_at: string;
   status: string;
 }
 
@@ -59,7 +59,7 @@ export default function OrdersPage() {
             <div key={order.id} className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
               <p className="font-semibold text-orange-100">Order #{order.id}</p>
               <p className="text-sm text-slate-400">
-                {new Date(order.order_date).toLocaleString()}
+                {new Date(order.created_at.replace(' ', 'T')).toLocaleString()}
               </p>
               <p className="mt-2 text-slate-300">Total: €{order.total.toFixed(2)}</p>
               <p className="text-sm text-slate-400">Status: {order.status}</p>
