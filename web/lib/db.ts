@@ -65,5 +65,16 @@ for (const sql of migrations) {
   db.prepare(sql).run();
 }
 
+// Backfill: add new user columns if they don't exist yet (safe on existing DBs)
+const userColumns = (db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map(
+  (c) => c.name
+);
+if (!userColumns.includes('name')) db.prepare('ALTER TABLE users ADD COLUMN name TEXT').run();
+if (!userColumns.includes('last_name'))
+  db.prepare('ALTER TABLE users ADD COLUMN last_name TEXT').run();
+if (!userColumns.includes('zip_code'))
+  db.prepare('ALTER TABLE users ADD COLUMN zip_code TEXT').run();
+if (!userColumns.includes('address')) db.prepare('ALTER TABLE users ADD COLUMN address TEXT').run();
+
 // Export as default for easier app imports
 export default db;

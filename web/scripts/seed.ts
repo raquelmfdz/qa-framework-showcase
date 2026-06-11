@@ -1,10 +1,7 @@
-import Database from 'better-sqlite3';
+import { db } from '../lib/db';
 import bcrypt from 'bcryptjs';
 
-const db = new Database(process.env.DATABASE_FILE || './dev.db');
-
 const sql = db.prepare('SELECT COUNT(*) AS count FROM products');
-const productCount = (sql.get() as { count: number }).count;
 
 const products = [
   {
@@ -40,7 +37,7 @@ const products = [
     price: 49.99,
     stock: 80,
     image_url:
-      'https://images.unsplash.com/photo-1568395216634-ab1b1e84875?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1683383277379-644816d886e2?auto=format&fit=crop&w=800&q=80',
     category: 'Health',
   },
   {
