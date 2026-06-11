@@ -7,7 +7,7 @@ import globals from 'globals';
 export default defineConfig([
   // 1. Archivos que ESLint debe ignorar por completo
   {
-    ignores: ['**/.next/**', '**/node_modules/**', '**/dist/**']
+    ignores: ['**/.next/**', '**/node_modules/**', '**/dist/**'],
   },
 
   // 2. Configuración base recomendada para JavaScript y TypeScript
@@ -26,7 +26,10 @@ export default defineConfig([
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       'no-unused-vars': 'off',
     },
   },
