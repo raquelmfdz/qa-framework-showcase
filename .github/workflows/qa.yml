@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: next-build-package
-          path: web/.next
+          path: .next # Changed from 'web/.next' to root '.next'
           retention-days: 1
 
   # Unit tests job running Vitest inside the 'web' workspace
