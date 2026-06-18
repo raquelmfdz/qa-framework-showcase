@@ -1,5 +1,5 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { mockSession } from '../../src/helpers/mock-session';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { mockSession } from '../src/helpers/mock-session';
 
 /**
  * Catalog integration tests: exercise the ProductGrid UI against mocked

@@ -1,5 +1,5 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { mockSession } from '../../src/helpers/mock-session';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { mockSession } from '../src/helpers/mock-session';
 
 test.describe('Admin Orders — mocked API states', () => {
   test('shows orders list when API returns data', async ({ page, adminOrdersPage }) => {

@@ -1,6 +1,6 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { mockSession } from '../../src/helpers/mock-session';
-import { VALID_CHECKOUT_DETAILS } from '../../src/data/products';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { mockSession } from '../src/helpers/mock-session';
+import { VALID_CHECKOUT_DETAILS } from '../src/data/products';
 
 /**
  * Checkout integration tests: mock the /api/orders POST and /api/cart
