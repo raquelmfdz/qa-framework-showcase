@@ -14,8 +14,7 @@ env:
   USER_EMAIL: ${{ secrets.USER_EMAIL }}
   USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
   NEXT_TELEMETRY_DISABLED: 1
-  # Unique cache key based on package-lock hash and commit SHA to isolate this run's build
-  WORKSPACE_CACHE_KEY: monorepo-state-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+  WORKSPACE_CACHE_KEY: monorepo-state-${{ github.sha }}
 
 jobs:
   # 1. CENTRAL BUILD JOB: Installs everything, compiles the app, and freezes the full monorepo state
@@ -36,6 +35,7 @@ jobs:
         run: npm run build
 
       # Cache the entire working directory (including node_modules symlinks and .next build)
+      # hashFiles() is valid here inside the step context if you wish to use it, but github.sha is sufficient
       - name: Cache Full Workspace
         uses: actions/cache/save@v4
         with:
@@ -134,18 +134,12 @@ jobs:
         env:
           CI: true
 
-      - name: Upload E2E report
+      - name: Upload E2E Test Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-report
-          path: tests/playwright-report/e2e/
+          name: e2e-test-results
+          path: |
+            tests/playwright-report/e2e/
+            tests/test-results/
           retention-days: 14
-
-      - name: Upload E2E traces on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-traces
-          path: tests/test-results/
-          retention-days: 7
