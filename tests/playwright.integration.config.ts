@@ -1,9 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
-import dotenv from 'dotenv';
 import path from 'path';
 import { baseConfig, BASE_URL } from './playwright.base.config';
-
-dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 /**
  * Integration config: tests mock the network layer via page.route().
@@ -20,15 +17,12 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
  */
 export default defineConfig({
   ...baseConfig,
-
-  testDir: './integration',
-  timeout: 10_000,
-  workers: process.env.CI ? 4 : undefined,
-
-  reporter: [['html', { outputFolder: 'playwright-report/integration', open: 'never' }], ['list']],
-
+  testDir: './e2e',
+  globalSetup: './global-setup.ts',
+  reporter: [['html', { outputFolder: 'playwright-report/e2e', open: 'never' }], ['list']],
   webServer: {
-    command: 'npm run dev --workspace=web',
+    command: process.env.CI ? 'npm run start --workspace=web' : 'npm run dev --workspace=web',
+    cwd: path.resolve(__dirname, '..'),
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

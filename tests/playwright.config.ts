@@ -21,14 +21,12 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
  */
 export default defineConfig({
   ...baseConfig,
-
   testDir: './e2e',
   globalSetup: './global-setup.ts',
-
   reporter: [['html', { outputFolder: 'playwright-report/e2e', open: 'never' }], ['list']],
-
   webServer: {
-    command: 'npm run dev --workspace=web',
+    command: process.env.CI ? 'npm run start --workspace=web' : 'npm run dev --workspace=web',
+    cwd: path.resolve(__dirname, '..'),
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

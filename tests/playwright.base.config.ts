@@ -1,17 +1,7 @@
 import { defineConfig } from '@playwright/test';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 export const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 
-/**
- * Shared settings only. e2e and integration configs each call
- * defineConfig() themselves and spread this in — they are NOT Playwright
- * "projects" of one config, see playwright.config.ts header comment for
- * why they're deliberately kept as two separate config files.
- */
 export const baseConfig = {
   timeout: 30_000,
   expect: { timeout: 5_000 },
