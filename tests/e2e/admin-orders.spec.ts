@@ -1,6 +1,6 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { VALID_CHECKOUT_DETAILS } from '../../src/data/products';
-import { clearCart, addProductToCart } from '../../src/helpers/api-data';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { VALID_CHECKOUT_DETAILS } from '../src/data/products';
+import { clearCart, addProductToCart } from '../src/helpers/api-data';
 
 /**
  * Admin specs run under 'as-admin' project — storageState: .auth/admin.json.
@@ -13,9 +13,7 @@ import { clearCart, addProductToCart } from '../../src/helpers/api-data';
 test.describe('Admin — Order Management', () => {
   test('admin can access /admin/orders @smoke', async ({ adminOrdersPage }) => {
     await adminOrdersPage.open();
-    await expect(
-      adminOrdersPage.orderRows.or(adminOrdersPage.page.getByText(/no orders/i))
-    ).toBeVisible();
+    await expect(adminOrdersPage.orderRows.or(adminOrdersPage.emptyState)).toBeVisible();
   });
 
   test('placed order appears in admin panel', async ({

@@ -157,13 +157,14 @@ function seed() {
     .count;
 
   if (userCount === 0) {
-    const passwordHash = bcrypt.hashSync('Password1!', 10);
+    const adminPasswordHash = bcrypt.hashSync('Password1!', 10);
+    const userPasswordHash = bcrypt.hashSync('!1passworD', 10);
 
     db.prepare(
       'INSERT INTO users (email, password_hash, role, name, last_name, zip_code, address) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(
       'admin@example.com',
-      passwordHash,
+      adminPasswordHash,
       'admin',
       'Admin',
       'McAdminface',
@@ -175,7 +176,7 @@ function seed() {
       'INSERT INTO users (email, password_hash, role, name, last_name, zip_code, address) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(
       'user@example.com',
-      passwordHash,
+      userPasswordHash,
       'USER',
       'Regular',
       'McUserton',

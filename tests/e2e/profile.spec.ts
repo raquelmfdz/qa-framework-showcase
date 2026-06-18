@@ -1,5 +1,5 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { SEED_USERS } from '../../src/data/users';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { SEED_USERS } from '../src/data/users';
 
 /**
  * Profile specs run under 'as-user'.

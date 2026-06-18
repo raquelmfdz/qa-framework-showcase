@@ -18,7 +18,7 @@ export const SEED_USERS = {
   },
   user: {
     email: 'user@example.com',
-    password: 'Password1!',
+    password: '!1passworD',
     role: 'USER',
     name: 'Regular',
     lastName: 'McUserton',

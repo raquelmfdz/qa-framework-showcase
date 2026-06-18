@@ -1,6 +1,6 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { VALID_CHECKOUT_DETAILS } from '../../src/data/products';
-import { clearCart, addProductToCart } from '../../src/helpers/api-data';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { VALID_CHECKOUT_DETAILS } from '../src/data/products';
+import { clearCart, addProductToCart } from '../src/helpers/api-data';
 
 /**
  * Orders specs run under 'as-user'.

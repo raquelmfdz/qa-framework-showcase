@@ -1,5 +1,5 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { SEED_PRODUCTS } from '../../src/data/products';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { SEED_PRODUCTS } from '../src/data/products';
 
 /**
  * Catalog specs run under 'as-guest' (no session needed — the product grid

@@ -1,6 +1,6 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { SEED_PRODUCTS } from '../../src/data/products';
-import { clearCart } from '../../src/helpers/api-data';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { SEED_PRODUCTS } from '../src/data/products';
+import { clearCart } from '../src/helpers/api-data';
 
 /**
  * Cart specs run under 'as-user' project — storageState: .auth/user.json.

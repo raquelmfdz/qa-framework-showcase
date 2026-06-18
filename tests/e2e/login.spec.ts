@@ -1,5 +1,5 @@
-import { test, expect } from '../../src/fixtures/pages.fixture';
-import { SEED_USERS } from '../../src/data/users';
+import { test, expect } from '../src/fixtures/pages.fixture';
+import { SEED_USERS } from '../src/data/users';
 
 /**
  * Auth specs run under the 'as-guest' project (no storageState),
