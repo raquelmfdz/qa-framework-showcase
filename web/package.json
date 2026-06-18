@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "seed": "ts-node --project tsconfig.seed.json scripts/seed.ts",
-    "db:reset": "rm -f dev.db && npm run seed"
+    "db:reset": "rm -f dev.db && npm run seed",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,10 +25,12 @@
     "@types/node": "^20.14.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.5",
     "ts-node": "^10.9.1",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.4"
   }
 }

@@ -21,7 +21,7 @@
     "build": "npm run build --workspace=web",
     "start": "npm run start --workspace=web",
     "seed": "npm run seed --workspace=web",
-    "test:unit": "npm run test:unit --workspace=tests",
+    "test:unit": "npm run test:unit --workspace=web",
     "test:integration": "npm run test:integration --workspace=tests",
     "test:e2e": "npm run test:e2e --workspace=tests",
     "test:a11y": "npm run test:a11y --workspace=non-functional-tests/a11y",

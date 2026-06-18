@@ -1,0 +1,78 @@
+import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+import { baseConfig, BASE_URL } from './playwright.base.config';
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+/**
+ * E2E config: tests hit a REAL backend (real DB, real NextAuth session).
+ *
+ * Projects:
+ *  - setup      : runs auth.setup.ts once, generates .auth/admin.json & .auth/user.json
+ *  - as-user    : all tests under e2e/ except auth/ and admin/, with USER session
+ *  - as-admin   : tests under e2e/admin/, with admin session
+ *  - as-guest   : tests under e2e/auth/ and e2e/catalog/ (no session needed)
+ *
+ * webServer behaviour:
+ *  - CI  (process.env.CI=true)  : Playwright boots Next.js and waits for it.
+ *  - Local (no CI var)          : reuses whatever is already on port 3000 (your npm run dev).
+ *    If nothing is running it will also boot it, so you never need to remember to start it.
+ */
+export default defineConfig({
+  ...baseConfig,
+
+  testDir: './e2e',
+  globalSetup: './global-setup.ts',
+
+  reporter: [['html', { outputFolder: 'playwright-report/e2e', open: 'never' }], ['list']],
+
+  webServer: {
+    command: 'npm run dev --workspace=web',
+    url: BASE_URL,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+    stdout: 'ignore',
+    stderr: 'pipe',
+  },
+
+  projects: [
+    // ── 1. Auth setup (runs first, no storageState dependency) ──────────────
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+    },
+
+    // ── 2. Tests as an authenticated regular USER ────────────────────────────
+    {
+      name: 'as-user',
+      dependencies: ['setup'],
+      testIgnore: [/auth\.setup\.ts/, /e2e\/auth\//, /e2e\/admin\//],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+    },
+
+    // ── 3. Tests as an authenticated ADMIN ──────────────────────────────────
+    {
+      name: 'as-admin',
+      dependencies: ['setup'],
+      testMatch: /e2e\/admin\//,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/admin.json',
+      },
+    },
+
+    // ── 4. Guest / unauthenticated tests (login page, public catalog) ────────
+    {
+      name: 'as-guest',
+      testMatch: [/e2e\/auth\//, /e2e\/catalog\//],
+      use: {
+        ...devices['Desktop Chrome'],
+        // No storageState — browser starts with no session cookie
+      },
+    },
+  ],
+});

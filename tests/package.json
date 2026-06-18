@@ -1,0 +1,21 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test --config=playwright.config.ts",
+    "test:e2e:headed": "playwright test --config=playwright.config.ts --headed",
+    "test:e2e:ui": "playwright test --config=playwright.config.ts --ui",
+    "test:e2e:debug": "playwright test --config=playwright.config.ts --debug",
+    "test:integration": "playwright test --config=playwright.integration.config.ts",
+    "report:e2e": "playwright show-report playwright-report/e2e",
+    "report:integration": "playwright show-report playwright-report/integration",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^20.14.2",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.5.4"
+  }
+}
