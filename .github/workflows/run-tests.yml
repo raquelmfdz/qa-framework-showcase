@@ -14,9 +14,11 @@ env:
   USER_EMAIL: ${{ secrets.USER_EMAIL }}
   USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
   NEXT_TELEMETRY_DISABLED: 1
+  # Unique cache key based on package-lock hash and commit SHA to isolate this run's build
+  WORKSPACE_CACHE_KEY: monorepo-state-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
 
 jobs:
-  # Central job to ensure application compilation and generate production build
+  # 1. CENTRAL BUILD JOB: Installs everything, compiles the app, and freezes the full monorepo state
   build:
     name: Build Application
     runs-on: ubuntu-latest
@@ -26,7 +28,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install Monorepo Dependencies
         run: npm ci
@@ -34,21 +35,16 @@ jobs:
       - name: Build Next.js app
         run: npm run build
 
-      # Temporary debug step to find the exact location of the .next folder
-      - name: Locate Next.js Build Folder
-        run: |
-          echo "=== Searching for .next folders in the workspace ==="
-          find . -type d -name ".next" -not -path "*/node_modules/*"
-
-      # Save the production build. Stored in 'web/.next' so 'next start' can locate it later.
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+      # Cache the entire working directory (including node_modules symlinks and .next build)
+      - name: Cache Full Workspace
+        uses: actions/cache/save@v4
         with:
-          name: next-build-package
-          path: .next # Changed from 'web/.next' to root '.next'
-          retention-days: 1
+          path: |
+            .
+            !**/node_modules/.cache
+          key: ${{ env.WORKSPACE_CACHE_KEY }}
 
-  # Unit tests job running Vitest inside the 'web' workspace
+  # 2. UNIT TESTS: Restores state instantly, avoids running npm ci again
   unit:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -59,15 +55,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: Restore Workspace State
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .
+            !**/node_modules/.cache
+          key: ${{ env.WORKSPACE_CACHE_KEY }}
+          fail-on-cache-miss: true
 
       - name: Run unit tests
         run: npm run test:unit
 
-  # Integration tests job where Playwright mocks the network layer
+  # 3. INTEGRATION TESTS: Restores state and boots Playwright WebServer instantly
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -78,16 +79,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Download Next Build
-        uses: actions/download-artifact@v4
+      - name: Restore Workspace State
+        uses: actions/cache/restore@v4
         with:
-          name: next-build-package
-          path: web/.next
+          path: |
+            .
+            !**/node_modules/.cache
+          key: ${{ env.WORKSPACE_CACHE_KEY }}
+          fail-on-cache-miss: true
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
@@ -105,7 +105,7 @@ jobs:
           path: tests/playwright-report/integration/
           retention-days: 14
 
-  # E2E tests job where Playwright interacts with real DB and authentication setup
+  # 4. E2E TESTS: Restores state and runs isolated end-to-end suite
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
@@ -116,16 +116,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Download Next Build
-        uses: actions/download-artifact@v4
+      - name: Restore Workspace State
+        uses: actions/cache/restore@v4
         with:
-          name: next-build-package
-          path: web/.next
+          path: |
+            .
+            !**/node_modules/.cache
+          key: ${{ env.WORKSPACE_CACHE_KEY }}
+          fail-on-cache-miss: true
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
