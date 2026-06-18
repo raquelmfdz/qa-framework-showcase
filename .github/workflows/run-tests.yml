@@ -13,6 +13,8 @@ env:
   ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
   USER_EMAIL: ${{ secrets.USER_EMAIL }}
   USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+  # Mandatary encryption key required by NextAuth.js to boot up in production mode inside CI
+  NEXTAUTH_SECRET: "ci_testing_secret_key_123456789_abcdef"
   NEXT_TELEMETRY_DISABLED: 1
   WORKSPACE_CACHE_KEY: monorepo-state-${{ github.sha }}
 
