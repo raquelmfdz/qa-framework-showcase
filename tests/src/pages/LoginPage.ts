@@ -1,16 +1,6 @@
 import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
-/**
- * NOTE ON SELECTORS:
- * I haven't seen web/app/login/page.tsx, so these locators are written
- * against sane Next.js form conventions (label associations + a submit
- * button with accessible text). If your inputs don't have proper
- * <label htmlFor> wiring, swap getByLabel for data-testid locators —
- * e.g. add data-testid="login-email" to the <input> and use
- * page.getByTestId('login-email') instead. Prefer that long-term: testid
- * locators don't break when copy changes.
- */
 export class LoginPage extends BasePage {
   readonly emailInput: Locator;
   readonly passwordInput: Locator;

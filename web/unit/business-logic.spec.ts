@@ -53,13 +53,20 @@ describe('validateRegistrationInput', () => {
 });
 
 describe('parseOrderId', () => {
-  it('parses valid numeric ids', () => {
+  it('parses a valid positive integer string', () => {
     expect(parseOrderId('42')).toBe(42);
   });
 
-  it('rejects NaN and zero-ish values', () => {
+  it('returns null for non-numeric input', () => {
     expect(parseOrderId('abc')).toBeNull();
+  });
+
+  it('returns null for zero', () => {
     expect(parseOrderId('0')).toBeNull();
+  });
+
+  it('returns null for negative numbers', () => {
+    expect(parseOrderId('-5')).toBeNull();
   });
 });
 
@@ -76,6 +83,10 @@ describe('isValidAdminOrderStatus', () => {
 
   it('rejects unsupported status', () => {
     expect(isValidAdminOrderStatus('RETURNED')).toBe(false);
+  });
+
+  it('rejects empty string', () => {
+    expect(isValidAdminOrderStatus('')).toBe(false);
   });
 });
 
@@ -137,11 +148,9 @@ describe('calculateCartTotal', () => {
     expect(calculateCartTotal(items)).toBe(129.97);
   });
 
-  it('handles floating point without precision errors', () => {
-    const items = [
-      { price: 0.1, quantity: 1 },
-      { price: 0.2, quantity: 1 },
-    ];
-    expect(calculateCartTotal(items)).toBe(0.3);
+  it('rounds a result with more than 2 decimal places', () => {
+    // 1.005 in IEEE 754 actually rounds to 1.00, not 1.01 — toFixed(2) applied
+    // after the reduce ensures we always return a 2dp value.
+    expect(calculateCartTotal([{ price: 10.005, quantity: 1 }])).toBe(10.01);
   });
 });

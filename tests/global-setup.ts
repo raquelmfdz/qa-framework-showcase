@@ -27,7 +27,6 @@ async function globalSetup(_config: FullConfig) {
   }
 
   // Re-seed synchronously so the webServer boots against a fresh DB.
-  // Runs from the web/ workspace so relative paths inside seed.ts resolve correctly.
   const webDir = path.resolve(__dirname, '../web');
   execSync('npm run seed', { cwd: webDir, stdio: 'inherit' });
 }

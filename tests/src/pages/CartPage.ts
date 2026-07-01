@@ -1,12 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
-/**
- * Maps to web/app/cart/page.tsx + web/app/api/cart/route.ts.
- * Verify against the real component — particularly how quantity is
- * changed (stepper buttons vs a number input) and how line items expose
- * their product name for the `lineItemByName` filter to work.
- */
+/** Maps to web/app/cart/page.tsx + web/app/api/cart/route.ts */
 export class CartPage extends BasePage {
   readonly lineItems: Locator;
   readonly checkoutButton: Locator;
@@ -15,7 +10,6 @@ export class CartPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    // Match cart-item-{productId} using CSS selector with attribute prefix match
     this.lineItems = page.locator('[data-testid^="cart-item-"]');
     this.checkoutButton = page.getByRole('link', { name: /checkout/i });
     this.emptyCartMessage = page.getByText(/your cart is empty/i);

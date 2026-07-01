@@ -1,12 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
-/**
- * Maps to web/app/checkout/page.tsx + web/app/api/orders/route.ts.
- * Field names follow the `orders` table columns from web/lib/db.ts
- * (customer_name, customer_last_name, customer_zip_code, shipping_address)
- * — adjust getByLabel strings once you confirm the actual <label> text.
- */
+/** Maps to web/app/checkout/page.tsx + web/app/api/orders/route.ts */
 export class CheckoutPage extends BasePage {
   readonly firstNameInput: Locator;
   readonly lastNameInput: Locator;
@@ -17,7 +12,6 @@ export class CheckoutPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    // Use testid for more precise selection
     this.firstNameInput = page.getByTestId('checkout-first-name');
     this.lastNameInput = page.getByTestId('checkout-last-name');
     this.emailInput = page.getByTestId('checkout-email');

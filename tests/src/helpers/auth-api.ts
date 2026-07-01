@@ -5,17 +5,14 @@ import { APIRequestContext, expect } from '@playwright/test';
  * no browser, no UI interaction. Used by the auth setup project to
  * produce a storageState per role (see playwright.config.ts -> projects).
  *
- * NextAuth v4 Credentials flow, two requests:
+ * NextAuth v4 Credentials flow:
  *  1. GET /api/auth/csrf       -> { csrfToken } and sets a csrf cookie
  *  2. POST /api/auth/callback/credentials
  *       body: { email, password, csrfToken, json: 'true' }
- *     On success this returns a redirect (302) and sets the
- *     `next-auth.session-token` cookie (or `__Secure-` prefixed under HTTPS).
+ *     On success sets the `next-auth.session-token` cookie.
  *
- * Note: we deliberately do NOT follow the redirect for assertions — we only
- * care about the Set-Cookie header. APIRequestContext follows redirects by
- * default, which is fine here since the final response is still 200/302 and
- * the cookie is already persisted into `request`'s cookie jar at that point.
+ * Retries up to 3 times to tolerate slow CI startup before the server
+ * is fully ready to accept credentials.
  */
 export async function loginViaApi(
   request: APIRequestContext,

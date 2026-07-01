@@ -12,11 +12,6 @@ export abstract class BasePage {
     await this.page.goto(path);
   }
 
-  /**
-   * Generic toast/error banner locator. Adjust the selector to match
-   * whatever component you use for inline error/success messages
-   * (e.g. a shared <Toast/> or an inline <p role="alert">).
-   */
   get alertBanner(): Locator {
     return this.page.getByRole('alert');
   }
