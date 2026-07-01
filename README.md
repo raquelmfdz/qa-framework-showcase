@@ -149,17 +149,17 @@ npm run test:a11y
 
 ## CI Modes and Manual Layer Selection
 
-The GitHub Actions workflow in `.github/workflows/run-tests.yml` supports two execution patterns:
+CI execution supports automatic runs and one manual run form:
 
 - Push/PR runs: optimized default CI.
   - Always runs full lint, typecheck, build, and unit tests.
   - Runs smoke-only subsets for Playwright API, integration, E2E, and a11y (`@smoke`).
   - Runs k6 smoke scenario (`non-functional-tests/load/scenarios/smoke.js`).
 
-- Manual runs (`Run workflow` in GitHub Actions): selectable scope and layers.
-  - `layer_selection`: choose `selected` (use checkboxes below) or `all` (run every layer).
+- Manual run (`Run workflow` on `.github/workflows/run-tests.yml`):
   - `test_scope`: choose `smoke` or `full`.
-  - Layer toggles: `run_unit`, `run_integration`, `run_api`, `run_e2e`, `run_a11y`, `run_load`.
+  - Layer checkboxes (default checked): `run_unit`, `run_integration`, `run_api`, `run_e2e`, `run_a11y`, `run_load`.
+  - Keep all checked to run everything, or uncheck layers you want to skip.
 
 Notes:
 

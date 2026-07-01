@@ -7,18 +7,10 @@ on:
     branches: [main, develop]
   workflow_dispatch:
     inputs:
-      layer_selection:
-        description: 'Layer selection mode'
-        required: true
-        default: selected
-        type: choice
-        options:
-          - selected
-          - all
       test_scope:
-        description: 'Execution scope for selected layers'
+        description: 'Execution scope'
         required: true
-        default: full
+        default: smoke
         type: choice
         options:
           - smoke
@@ -130,7 +122,6 @@ jobs:
     needs: [build]
     if: >-
       github.event_name != 'workflow_dispatch' ||
-      inputs.layer_selection == 'all' ||
       inputs.run_unit
     steps:
       - uses: actions/checkout@v4
@@ -170,7 +161,6 @@ jobs:
     needs: [build]
     if: >-
       github.event_name != 'workflow_dispatch' ||
-      inputs.layer_selection == 'all' ||
       inputs.run_integration
     steps:
       - uses: actions/checkout@v4
@@ -228,7 +218,6 @@ jobs:
     needs: [build]
     if: >-
       github.event_name != 'workflow_dispatch' ||
-      inputs.layer_selection == 'all' ||
       inputs.run_api
     steps:
       - uses: actions/checkout@v4
@@ -287,7 +276,6 @@ jobs:
     needs: [build]
     if: >-
       github.event_name != 'workflow_dispatch' ||
-      inputs.layer_selection == 'all' ||
       inputs.run_e2e ||
       inputs.run_a11y
     steps:
@@ -359,7 +347,6 @@ jobs:
     needs: [build, e2e]
     if: >-
       github.event_name != 'workflow_dispatch' ||
-      inputs.layer_selection == 'all' ||
       inputs.run_a11y
     steps:
       - uses: actions/checkout@v4
@@ -424,7 +411,6 @@ jobs:
     needs: [build]
     if: >-
       github.event_name != 'workflow_dispatch' ||
-      inputs.layer_selection == 'all' ||
       inputs.run_load
     steps:
       - uses: actions/checkout@v4
