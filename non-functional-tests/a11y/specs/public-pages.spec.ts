@@ -12,7 +12,7 @@ import { checkA11y } from '../utils/axe';
  */
 
 test.describe('A11y — Public pages', () => {
-  test('home / catalog page has no critical or serious violations', async ({ page }) => {
+  test('home / catalog page has no critical or serious violations @smoke', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL('/');
     await expect(page.getByTestId(/product-card-/).first()).toBeVisible();

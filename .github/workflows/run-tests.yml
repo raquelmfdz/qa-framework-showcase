@@ -5,6 +5,51 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      test_scope:
+        description: 'Execution scope for selected layers'
+        required: true
+        default: full
+        type: choice
+        options:
+          - smoke
+          - full
+      run_all_layers:
+        description: 'Run all layers (overrides individual layer checkboxes)'
+        required: false
+        default: false
+        type: boolean
+      run_unit:
+        description: 'Run unit tests'
+        required: false
+        default: true
+        type: boolean
+      run_integration:
+        description: 'Run integration tests'
+        required: false
+        default: true
+        type: boolean
+      run_api:
+        description: 'Run API tests'
+        required: false
+        default: true
+        type: boolean
+      run_e2e:
+        description: 'Run E2E tests'
+        required: false
+        default: true
+        type: boolean
+      run_a11y:
+        description: 'Run accessibility tests'
+        required: false
+        default: true
+        type: boolean
+      run_load:
+        description: 'Run load tests'
+        required: false
+        default: true
+        type: boolean
 
 env:
   BASE_URL: ${{ vars.BASE_URL }}
@@ -80,6 +125,10 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: [build]
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.run_all_layers ||
+      inputs.run_unit
     steps:
       - uses: actions/checkout@v4
 
@@ -116,6 +165,10 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: [build]
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.run_all_layers ||
+      inputs.run_integration
     steps:
       - uses: actions/checkout@v4
 
@@ -139,7 +192,12 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Run integration tests
-        run: npm run test:integration
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.test_scope }}" == "full" ]]; then
+            npm run test:integration
+          else
+            npm run test:integration -- --grep @smoke
+          fi
         env:
           CI: true
           PW_JSON_REPORT_FILE: ../artifacts/summary/integration.json
@@ -165,6 +223,10 @@ jobs:
     name: API Tests
     runs-on: ubuntu-latest
     needs: [build]
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.run_all_layers ||
+      inputs.run_api
     steps:
       - uses: actions/checkout@v4
 
@@ -188,7 +250,12 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Run API tests
-        run: npm run test:api
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.test_scope }}" == "full" ]]; then
+            npm run test:api
+          else
+            npm run test:api -- --grep @smoke
+          fi
         env:
           CI: true
           PW_JSON_REPORT_FILE: ../artifacts/summary/api.json
@@ -215,6 +282,11 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: [build]
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.run_all_layers ||
+      inputs.run_e2e ||
+      inputs.run_a11y
     steps:
       - uses: actions/checkout@v4
 
@@ -238,7 +310,12 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.test_scope }}" == "full" ]]; then
+            npm run test:e2e
+          else
+            npm run test:e2e -- --grep @smoke
+          fi
         env:
           CI: true
           PW_JSON_REPORT_FILE: ../artifacts/summary/e2e.json
@@ -277,6 +354,10 @@ jobs:
     name: Accessibility Tests
     runs-on: ubuntu-latest
     needs: [build, e2e]
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.run_all_layers ||
+      inputs.run_a11y
     steps:
       - uses: actions/checkout@v4
 
@@ -306,7 +387,12 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Run a11y tests
-        run: npm run test:a11y
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.test_scope }}" == "full" ]]; then
+            npm run test:a11y
+          else
+            npm run test:a11y -- --grep @smoke
+          fi
         env:
           CI: true
           PW_JSON_REPORT_FILE: ../../artifacts/summary/a11y.json
@@ -333,6 +419,10 @@ jobs:
     name: Load Tests (Smoke)
     runs-on: ubuntu-latest
     needs: [build]
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.run_all_layers ||
+      inputs.run_load
     steps:
       - uses: actions/checkout@v4
 
@@ -376,8 +466,13 @@ jobs:
       - name: Wait for app to be ready
         run: npx wait-on ${{ env.BASE_URL }} --timeout 60000
 
-      - name: Run k6 smoke test
-        run: k6 run --summary-export=artifacts/summary/performance.json --env BASE_URL=${{ env.BASE_URL }} non-functional-tests/load/scenarios/smoke.js
+      - name: Run k6 load scenario
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.test_scope }}" == "full" ]]; then
+            k6 run --summary-export=artifacts/summary/performance.json --env BASE_URL=${{ env.BASE_URL }} non-functional-tests/load/scenarios/baseline-ramp.js
+          else
+            k6 run --summary-export=artifacts/summary/performance.json --env BASE_URL=${{ env.BASE_URL }} non-functional-tests/load/scenarios/smoke.js
+          fi
 
       - name: Upload performance summary data
         if: always()

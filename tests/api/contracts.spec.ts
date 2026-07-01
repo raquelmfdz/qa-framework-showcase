@@ -9,7 +9,7 @@ import { VALID_CHECKOUT_DETAILS, SEED_PRODUCTS } from '../src/data/products';
 import { loginViaApi } from '../src/helpers/auth-api';
 
 test.describe('API Contracts and Guardrails', () => {
-  test('GET /api/products returns a JSON array', async ({ request }) => {
+  test('GET /api/products returns a JSON array @smoke', async ({ request }) => {
     const res = await request.get('/api/products');
     expect(res.ok()).toBeTruthy();
 
@@ -32,7 +32,7 @@ test.describe('API Contracts and Guardrails', () => {
     expect(body).toEqual([]);
   });
 
-  test('GET /api/admin/orders denies unauthenticated access', async ({ request }) => {
+  test('GET /api/admin/orders denies unauthenticated access @smoke', async ({ request }) => {
     const res = await request.get('/api/admin/orders');
     expect(res.status()).toBe(401);
     await expect(res.text()).resolves.toMatch(/unauthorized/i);

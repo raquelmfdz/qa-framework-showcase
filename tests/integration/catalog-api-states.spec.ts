@@ -8,7 +8,7 @@ import { mockSession } from '../src/helpers/mock-session';
  * and pagination controls.
  */
 test.describe('Catalog — rendered page behavior', () => {
-  test('shows catalog cards and pagination controls on home', async ({ page, homePage }) => {
+  test('shows catalog cards and pagination controls on home @smoke', async ({ page, homePage }) => {
     await mockSession(page, 'guest');
 
     await homePage.open();

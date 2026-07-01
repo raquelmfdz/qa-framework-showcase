@@ -8,7 +8,7 @@ import {
 } from '../../src/helpers/orders-api';
 
 test.describe('E2E Admin Permissions Lifecycle', () => {
-  test('admin can update an order status through admin API and see it reflected in UI', async ({
+  test('admin can update an order status through admin API and see it reflected in UI @smoke', async ({
     page,
     adminOrdersPage,
   }) => {

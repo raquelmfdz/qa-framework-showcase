@@ -2,7 +2,7 @@ import { test, expect } from '../../src/fixtures/pages.fixture';
 import { SEED_USERS } from '../../src/data/users';
 
 test.describe('E2E Session Security', () => {
-  test('logged-in user can logout and is redirected when accessing protected profile', async ({
+  test('logged-in user can logout and is redirected when accessing protected profile @smoke', async ({
     page,
     navbar,
     loginPage,

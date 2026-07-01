@@ -147,6 +147,25 @@ npm run test:e2e
 npm run test:a11y
 ```
 
+## CI Modes and Manual Layer Selection
+
+The GitHub Actions workflow in `.github/workflows/run-tests.yml` supports two execution patterns:
+
+- Push/PR runs: optimized default CI.
+  - Always runs full lint, typecheck, build, and unit tests.
+  - Runs smoke-only subsets for Playwright API, integration, E2E, and a11y (`@smoke`).
+  - Runs k6 smoke scenario (`non-functional-tests/load/scenarios/smoke.js`).
+
+- Manual runs (`Run workflow` in GitHub Actions): selectable scope and layers.
+  - `test_scope`: choose `smoke` or `full`.
+  - Layer toggles: `run_unit`, `run_integration`, `run_api`, `run_e2e`, `run_a11y`, `run_load`.
+  - `run_all_layers`: when enabled, runs every layer regardless of individual toggles.
+
+Notes:
+
+- Unit tests are intentionally always full when the unit layer is selected.
+- If `run_a11y` is selected, E2E auth-state generation is also executed so authenticated a11y checks have storage state available.
+
 For K6 load tests (requires [k6 installed](https://k6.io/docs/get-started/installation/)):
 
 ```bash

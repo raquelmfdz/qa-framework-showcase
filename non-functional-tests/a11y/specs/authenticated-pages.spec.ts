@@ -28,7 +28,7 @@ test.describe('A11y — Authenticated user pages', () => {
     await checkA11y(page);
   });
 
-  test('profile page has no critical or serious violations', async ({ page }) => {
+  test('profile page has no critical or serious violations @smoke', async ({ page }) => {
     await page.goto('/profile');
     await expect(page).toHaveURL('/profile');
     await expect(page.getByRole('heading', { name: 'Edit Profile' })).toBeVisible();

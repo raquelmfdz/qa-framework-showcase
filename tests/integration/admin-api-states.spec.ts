@@ -2,7 +2,7 @@ import { test, expect } from '../src/fixtures/pages.fixture';
 import { mockSession } from '../src/helpers/mock-session';
 
 test.describe('Admin Orders — mocked API states', () => {
-  test('redirects to login before admin orders API is requested', async ({
+  test('redirects to login before admin orders API is requested @smoke', async ({
     page,
     adminOrdersPage,
   }) => {

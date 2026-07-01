@@ -68,7 +68,10 @@ test.describe('Checkout — mocked API states', () => {
     );
   });
 
-  test('redirects to success page when order API returns 201', async ({ checkoutPage, page }) => {
+  test('redirects to success page when order API returns 201 @smoke', async ({
+    checkoutPage,
+    page,
+  }) => {
     await page.route('**/api/orders', (route) =>
       route.fulfill({
         status: 201,
