@@ -1,4 +1,4 @@
-name: Run All Test Suites
+name: CI Unit + Smoke Suites
 
 on:
   push:
@@ -92,27 +92,6 @@ env:
   WORKSPACE_CACHE_KEY: monorepo-state-${{ github.sha }}
 
 jobs:
-  changes:
-    name: Detect UI/Auth Changes
-    runs-on: ubuntu-latest
-    outputs:
-      ui_or_auth_changed: ${{ steps.filter.outputs.ui_or_auth }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            ui_or_auth:
-              - 'web/app/**'
-              - 'web/components/**'
-              - 'web/styles/**'
-              - 'web/middleware.ts'
-              - 'web/lib/auth.ts'
-              - 'web/lib/auth-secret.ts'
-              - 'non-functional-tests/a11y/**'
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -149,7 +128,7 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, changes]
+    needs: [lint, typecheck]
     steps:
       - uses: actions/checkout@v4
 
@@ -405,20 +384,36 @@ jobs:
   a11y:
     name: Accessibility Tests
     runs-on: ubuntu-latest
-    needs: [build, e2e, changes]
+    needs: [build, e2e]
     if: >-
       (github.event_name == 'workflow_dispatch' && inputs.run_a11y) ||
       (github.event_name == 'workflow_call' && inputs.run_a11y) ||
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'pull_request' && needs.changes.outputs.ui_or_auth_changed == 'true')
+      (github.event_name == 'pull_request')
     steps:
       - uses: actions/checkout@v4
 
+      - uses: dorny/paths-filter@v3
+        id: a11y_changes
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            related:
+              - 'web/app/**'
+              - 'web/components/**'
+              - 'web/styles/**'
+              - 'web/middleware.ts'
+              - 'web/lib/auth.ts'
+              - 'web/lib/auth-secret.ts'
+              - 'non-functional-tests/a11y/**'
+
       - uses: actions/setup-node@v4
+        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         with:
           node-version: '20'
 
       - name: Restore Workspace State
+        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -428,18 +423,22 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Prepare summary artifacts directory
+        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         run: mkdir -p artifacts/summary
 
       - name: Download auth state from e2e setup
+        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         uses: actions/download-artifact@v4
         with:
           name: e2e-auth-state
           path: tests/.auth
 
       - name: Install Playwright Chromium
+        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         run: npx playwright install chromium --with-deps
 
       - name: Run a11y tests
+        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         run: |
           if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
             npm run test:a11y
@@ -451,7 +450,7 @@ jobs:
           PW_JSON_REPORT_FILE: ../../artifacts/summary/a11y.json
 
       - name: Upload a11y report
-        if: always()
+        if: always() && (github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true')
         uses: actions/upload-artifact@v4
         with:
           name: a11y-report
@@ -459,7 +458,7 @@ jobs:
           retention-days: 14
 
       - name: Upload a11y summary data
-        if: always()
+        if: always() && (github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true')
         uses: actions/upload-artifact@v4
         with:
           name: summary-a11y

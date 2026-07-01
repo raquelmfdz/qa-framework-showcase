@@ -6,7 +6,7 @@ on:
 
 jobs:
   run-full-suite:
-    uses: ./.github/workflows/run-tests.yml
+    uses: ./.github/workflows/ci-smoke-unit.yml
     with:
       test_scope: full
       run_unit: true

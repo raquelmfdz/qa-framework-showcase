@@ -157,10 +157,14 @@ CI execution supports automatic runs, one manual run form, and a nightly full su
   - Runs a11y smoke on `main` pushes and on PRs that touch UI/auth paths.
   - Does not run load tests on push/PR.
 
-- Manual run (`Run workflow` on `.github/workflows/run-tests.yml`):
+- Manual run (`Run workflow` on `.github/workflows/ci-smoke-unit.yml`):
   - `test_scope`: choose `smoke` or `full`.
   - Layer checkboxes (default checked): `run_unit`, `run_integration`, `run_api`, `run_e2e`, `run_a11y`, `run_load`.
   - Keep all checked to run everything, or uncheck layers you want to skip.
+
+- PR a11y behavior (inside `.github/workflows/ci-smoke-unit.yml`):
+  - On pull requests, a11y smoke runs only when related UI/auth/a11y files change.
+  - Non-related PRs skip the a11y execution steps.
 
 - Nightly full run (`.github/workflows/nightly-full-suite.yml`):
   - Runs full unit/API/integration/E2E/a11y/load with no user inputs.
