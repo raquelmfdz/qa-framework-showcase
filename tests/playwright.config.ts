@@ -22,7 +22,13 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 export default defineConfig({
   ...baseConfig,
   testDir: './e2e',
-  reporter: [['html', { outputFolder: 'playwright-report/e2e', open: 'never' }], ['list']],
+  reporter: [
+    ['html', { outputFolder: 'playwright-report/e2e', open: 'never' }],
+    ['list'],
+    ...(process.env.PW_JSON_REPORT_FILE
+      ? [['json', { outputFile: process.env.PW_JSON_REPORT_FILE }] as const]
+      : []),
+  ],
   webServer: {
     command: process.env.CI
       ? 'npm run db:reset --workspace=web && npm run start --workspace=web'

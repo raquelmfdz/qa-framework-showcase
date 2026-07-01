@@ -10,7 +10,13 @@ import { baseConfig, BASE_URL } from './playwright.base.config';
 export default defineConfig({
   ...baseConfig,
   testDir: './api',
-  reporter: [['html', { outputFolder: 'playwright-report/api', open: 'never' }], ['list']],
+  reporter: [
+    ['html', { outputFolder: 'playwright-report/api', open: 'never' }],
+    ['list'],
+    ...(process.env.PW_JSON_REPORT_FILE
+      ? [['json', { outputFile: process.env.PW_JSON_REPORT_FILE }] as const]
+      : []),
+  ],
   webServer: {
     command: process.env.CI
       ? 'npm run seed --workspace=web && npm run start --workspace=web'

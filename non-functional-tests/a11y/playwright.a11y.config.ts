@@ -18,7 +18,13 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: [['html', { outputFolder: 'axe-reports/html', open: 'never' }], ['list']],
+  reporter: [
+    ['html', { outputFolder: 'axe-reports/html', open: 'never' }],
+    ['list'],
+    ...(process.env.PW_JSON_REPORT_FILE
+      ? [['json', { outputFile: process.env.PW_JSON_REPORT_FILE }] as const]
+      : []),
+  ],
   use: {
     baseURL: BASE_URL,
     trace: 'retain-on-failure',
