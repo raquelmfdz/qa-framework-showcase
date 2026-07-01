@@ -47,7 +47,10 @@ test.describe('E2E Orders History', () => {
         await expect(row).toContainText(`Total: €${createdOrder.expectedTotal.toFixed(2)}`);
       }
 
-      await expect(page.getByText(/Status:\s*PROCESSING|Status:\s*PENDING/i).first()).toBeVisible();
+      // Orders are seeded with PROCESSING status — assert on the known value, not a fallback.
+      for (const createdOrder of createdOrders) {
+        await expect(ordersPage.orderRowById(String(createdOrder.id))).toContainText('PROCESSING');
+      }
     } finally {
       await clearCart(api, baseURL!);
       deleteOrdersFromDb(createdOrderIds);

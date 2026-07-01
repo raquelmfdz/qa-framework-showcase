@@ -33,12 +33,11 @@ test.describe('Catalog — rendered page behavior', () => {
     await expect(page).toHaveURL(/\?category=/);
     await expect(homePage.productCards.first()).toBeVisible();
 
-    if (href?.includes('category=')) {
-      const categoryParam = href.split('category=')[1];
-      const encodedCategory = categoryParam?.split('&')[0] ?? '';
-      await expect(
-        page.locator(`nav[aria-label="Pagination"] a[href*="category=${encodedCategory}"]`).first()
-      ).toBeVisible();
-    }
+    // Category link must exist and carry query context — fail explicitly if not.
+    expect(href, 'Expected category link to have a category= query param').toMatch(/category=/);
+    const encodedCategory = href!.split('category=')[1].split('&')[0];
+    await expect(
+      page.locator(`nav[aria-label="Pagination"] a[href*="category=${encodedCategory}"]`).first()
+    ).toBeVisible();
   });
 });

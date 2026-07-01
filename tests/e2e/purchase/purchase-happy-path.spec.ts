@@ -47,8 +47,10 @@ test.describe('E2E Purchase Happy Path', () => {
     ];
 
     for (const entry of productsToAdd) {
+      const cartCountBefore = await page.getByTestId('cart-item-count').textContent();
       await page.getByTestId(`add-to-cart-${entry.id}`).click();
-      await page.waitForTimeout(300);
+      // Wait for cart count to update rather than using a hard timeout.
+      await expect(page.getByTestId('cart-item-count')).not.toHaveText(cartCountBefore ?? '');
     }
 
     // Step 4: cart contains selected items.

@@ -225,4 +225,4 @@ jobs:
         run: npx wait-on ${{ env.BASE_URL }} --timeout 60000
 
       - name: Run k6 smoke test
-        run: npm run k6:smoke -- --env BASE_URL=${{ env.BASE_URL }}
+        run: k6 run --env BASE_URL=${{ env.BASE_URL }} non-functional-tests/load/scenarios/smoke.js

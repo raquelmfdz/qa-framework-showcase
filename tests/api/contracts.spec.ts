@@ -7,14 +7,13 @@ test.describe('API Contracts and Guardrails', () => {
 
     const body = await res.json();
     expect(Array.isArray(body)).toBeTruthy();
+    expect(body.length, 'Products API must return at least one seeded product').toBeGreaterThan(0);
 
-    if (body.length > 0) {
-      const first = body[0];
-      expect(first).toHaveProperty('id');
-      expect(first).toHaveProperty('name');
-      expect(first).toHaveProperty('price');
-      expect(first).toHaveProperty('category');
-    }
+    const first = body[0];
+    expect(first).toHaveProperty('id');
+    expect(first).toHaveProperty('name');
+    expect(first).toHaveProperty('price');
+    expect(first).toHaveProperty('category');
   });
 
   test('GET /api/orders returns empty array for unauthenticated client', async ({ request }) => {

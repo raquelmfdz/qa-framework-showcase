@@ -22,8 +22,9 @@ Playwright + TypeScript QA suite for the demo e-commerce application, with unit 
 # from repo root
 npm ci
 
-# install browser once
+# install browsers once
 cd tests && npx playwright install chromium --with-deps
+cd ../non-functional-tests/a11y && npx playwright install chromium --with-deps
 
 # back to root and configure env
 cd ..

@@ -20,6 +20,14 @@ describe('normalizeEmail', () => {
   it('trims and lowercases email input', () => {
     expect(normalizeEmail('  USER@Example.COM  ')).toBe('user@example.com');
   });
+
+  it('lowercases without surrounding whitespace', () => {
+    expect(normalizeEmail('Admin@EXAMPLE.com')).toBe('admin@example.com');
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(normalizeEmail('')).toBe('');
+  });
 });
 
 describe('validateRegistrationInput', () => {
