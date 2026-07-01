@@ -225,3 +225,19 @@ npm run report:e2e
 - SQLite local DB keeps the showcase portable and simple; trade-off is less production parity if target systems use different DB engines.
 - Some tests seed or clean orders through a direct SQLite connection while the app server is running; WAL + busy timeout reduce lock contention, but this can still be less stable than seeding through API-only flows under heavy parallelism.
 - Unit coverage is focused on shared rule helpers rather than every UI function; trade-off is deliberate to keep QA effort concentrated on risk-heavy logic.
+
+## Spotted Bugs (Already Solved)
+
+### Spotted Through Automation
+
+- Admin protected-route tests were asserting page-level access denied states even though middleware redirected earlier; tests were aligned to the real middleware behavior. Test note: admin access assertions were updated in E2E and integration coverage.
+- API CI startup was missing seeded data, which broke product and cross-user contract checks; CI now seeds before startup. Test note: API contract coverage now runs with seeded CI startup.
+- Login return-to flow was broken because middleware used `redirect` while the login page only read `callbackUrl`; both now work together and the round-trip is covered. Test note: session security E2E now verifies logout -> protected route -> login -> return flow.
+- Middleware was importing a server-only auth module into the Edge runtime, which pulled in `better-sqlite3` and broke protected pages after login; auth secret handling was split into an Edge-safe module. Test note: protected-route E2E coverage now exercises the fixed middleware path.
+
+### Spotted Through Manual Testing
+
+- Cart badge count stayed stale after checkout; checkout now clears cart state and dispatches a cart refresh before redirect. Test note: purchase happy-path E2E now asserts the cart badge resets after order placement.
+- Cart quantity edits caused a disruptive page reload/loading flash; cart updates now happen locally and refresh the shared cart count without reloading the whole view. Test note: cart integration coverage verifies quantity changes do not re-trigger the full-page loading state.
+- Invalid ZIP codes only failed on submit with no guidance; checkout now shows the expected 5-digit format and validates it client-side before submitting. Test note: checkout integration coverage now verifies ZIP guidance and invalid-state behavior.
+- Invalid characters in cart quantity could collapse into an unintended item removal; quantity input is now limited to numeric entry and ignores invalid characters. Test note: cart integration coverage verifies invalid character input does not change quantity or remove the item.

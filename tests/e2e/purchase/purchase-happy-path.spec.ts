@@ -30,6 +30,7 @@ test.describe('E2E Purchase Happy Path', () => {
     cartPage,
     checkoutPage,
     orderSuccessPage,
+    navbar,
   }) => {
     // Step 1: login via UI.
     await loginPage.open();
@@ -92,6 +93,7 @@ test.describe('E2E Purchase Happy Path', () => {
     await expect(page).toHaveURL(/\/order\/success\/\d+/, { timeout: 15000 });
     await expect(orderSuccessPage.confirmationHeading).toBeVisible();
     await expect(orderSuccessPage.orderIdText).toBeVisible();
+    await expect(navbar.cartItemCount).toHaveText('Cart (0)');
 
     // Step 6: cart is cleared after successful checkout.
     await cartPage.open();

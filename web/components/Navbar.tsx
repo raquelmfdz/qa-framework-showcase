@@ -3,11 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const { data: session } = useSession();
-  const router = useRouter();
   const [count, setCount] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -36,8 +34,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     setMenuOpen(false);
-    await signOut({ redirect: false });
-    router.push('/login');
+    await signOut({ callbackUrl: '/login' });
   };
 
   const isAdmin = session?.user?.role === 'ADMIN';
@@ -106,7 +103,7 @@ export default function Navbar() {
                       role="menuitem"
                       onClick={() => {
                         setMenuOpen(false);
-                        router.push('/profile');
+                        window.location.assign('/profile');
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-orange-100 hover:bg-slate-800"
                     >

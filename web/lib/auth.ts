@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { db } from './db';
+import { AUTH_SECRET } from './auth-secret';
 
 interface DbUser {
   id: number;
@@ -12,6 +13,7 @@ interface DbUser {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: AUTH_SECRET,
   session: { strategy: 'jwt' },
   providers: [
     CredentialsProvider({

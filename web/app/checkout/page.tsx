@@ -11,6 +11,12 @@ interface CartItem {
   price: number;
 }
 
+const ZIP_CODE_HINT = 'Use a 5-digit ZIP code, for example 12345.';
+
+function isValidZipCode(zipCode: string) {
+  return /^\d{5}$/.test(zipCode.trim());
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -76,6 +82,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!isValidZipCode(zipCode)) {
+      setMessage(`Invalid ZIP code. ${ZIP_CODE_HINT}`);
+      return;
+    }
+
     setSubmitting(true);
     setMessage('');
 
@@ -98,6 +109,8 @@ export default function CheckoutPage() {
     }
 
     const order = await response.json();
+    setItems([]);
+    window.dispatchEvent(new Event('cartUpdated'));
     router.push(`/order/success/${order.id}`);
   }
 
@@ -202,7 +215,13 @@ export default function CheckoutPage() {
             className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
             data-testid="checkout-zip-code"
+            inputMode="numeric"
+            pattern="\d{5}"
+            aria-describedby="checkout-zip-code-hint"
           />
+          <p id="checkout-zip-code-hint" className="mt-2 text-sm text-slate-400">
+            {ZIP_CODE_HINT}
+          </p>
         </div>
 
         <div>

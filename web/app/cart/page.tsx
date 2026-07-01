@@ -14,10 +14,31 @@ interface CartItem {
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingProductId, setUpdatingProductId] = useState<number | null>(null);
   const [error, setError] = useState('');
 
-  async function loadCart() {
-    setLoading(true);
+  function handleQuantityInput(productId: number, rawValue: string) {
+    if (!/^\d*$/.test(rawValue)) {
+      return;
+    }
+
+    if (rawValue === '') {
+      return;
+    }
+
+    const quantity = Number(rawValue);
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      return;
+    }
+
+    void updateQuantity(productId, quantity);
+  }
+
+  async function loadCart(options?: { showLoading?: boolean }) {
+    const showLoading = options?.showLoading ?? false;
+    if (showLoading) {
+      setLoading(true);
+    }
     setError('');
     try {
       const response = await fetch('/api/cart');
@@ -27,38 +48,55 @@ export default function CartPage() {
     } catch {
       setError('Unable to load your cart. Please try again.');
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
-    loadCart();
-    window.addEventListener('cartUpdated', loadCart);
-    return () => window.removeEventListener('cartUpdated', loadCart);
+    loadCart({ showLoading: true });
+
+    function handleCartUpdated() {
+      void loadCart();
+    }
+
+    window.addEventListener('cartUpdated', handleCartUpdated);
+    return () => window.removeEventListener('cartUpdated', handleCartUpdated);
   }, []);
 
   async function updateQuantity(productId: number, quantity: number) {
+    setUpdatingProductId(productId);
     const response = await fetch('/api/cart', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productId, quantity }),
     });
     if (response.ok) {
-      loadCart();
+      setItems((currentItems) =>
+        quantity === 0
+          ? currentItems.filter((item) => item.product_id !== productId)
+          : currentItems.map((item) =>
+              item.product_id === productId ? { ...item, quantity } : item
+            )
+      );
       window.dispatchEvent(new Event('cartUpdated'));
     }
+    setUpdatingProductId(null);
   }
 
   async function removeItem(productId: number) {
+    setUpdatingProductId(productId);
     const response = await fetch('/api/cart', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productId }),
     });
     if (response.ok) {
-      loadCart();
+      setItems((currentItems) => currentItems.filter((item) => item.product_id !== productId));
       window.dispatchEvent(new Event('cartUpdated'));
     }
+    setUpdatingProductId(null);
   }
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -106,18 +144,28 @@ export default function CartPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <label className="text-sm text-slate-300">Quantity</label>
                     <input
-                      type="number"
+                      type="text"
                       min={1}
                       value={item.quantity}
-                      onChange={(e) => updateQuantity(item.product_id, Number(e.target.value))}
+                      onChange={(e) => handleQuantityInput(item.product_id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       className="w-20 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                       data-testid={`cart-quantity-${item.product_id}`}
+                      disabled={updatingProductId === item.product_id}
+                      inputMode="numeric"
+                      pattern="\d*"
+                      aria-label={`Quantity for ${item.name}`}
                     />
                     <button
                       type="button"
                       onClick={() => removeItem(item.product_id)}
                       className="rounded-full bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
                       data-testid={`cart-remove-${item.product_id}`}
+                      disabled={updatingProductId === item.product_id}
                     >
                       Remove
                     </button>

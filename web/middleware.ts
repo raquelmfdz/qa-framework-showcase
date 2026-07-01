@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { AUTH_SECRET } from './lib/auth-secret';
 
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (pathname.startsWith('/profile')) {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ req: request, secret: AUTH_SECRET });
     if (!token) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', `/profile${search}`);
@@ -15,7 +16,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/admin/orders')) {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ req: request, secret: AUTH_SECRET });
     if (!token) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', `/admin/orders${search}`);

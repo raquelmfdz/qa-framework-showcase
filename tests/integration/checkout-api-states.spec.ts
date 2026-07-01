@@ -83,4 +83,25 @@ test.describe('Checkout — mocked API states', () => {
 
     await expect(page).toHaveURL(/\/order\/success\/999/);
   });
+
+  test('shows ZIP format guidance before submitting invalid ZIP code', async ({
+    checkoutPage,
+    page,
+  }) => {
+    await checkoutPage.open();
+    await checkoutPage.fillShippingDetails({
+      ...VALID_CHECKOUT_DETAILS,
+      zipCode: '12AB',
+    });
+
+    await checkoutPage.placeOrder();
+
+    await expect(page.getByText(/use a 5-digit zip code, for example 12345/i)).toBeVisible();
+    expect(
+      await checkoutPage.zipCodeInput.evaluate(
+        (input) => (input as HTMLInputElement).validationMessage.length > 0
+      )
+    ).toBeTruthy();
+    await expect(page).toHaveURL('/checkout');
+  });
 });
