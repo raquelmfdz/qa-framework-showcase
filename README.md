@@ -12,7 +12,7 @@ Playwright + TypeScript QA suite for the demo e-commerce application, with unit 
 | E2E (real backend)            | [Playwright](https://playwright.dev/)                          |
 | Accessibility                 | [axe-core](https://github.com/dequelabs/axe-core) + Playwright |
 | Performance / Load            | [k6](https://k6.io/)                                           |
-| Language                      | TypeScript 5                                                   |
+| Language                      | TypeScript 6                                                   |
 | Auth                          | NextAuth v4 (Credentials + JWT session)                        |
 | DB                            | SQLite (`better-sqlite3`)                                      |
 
@@ -105,7 +105,6 @@ playwright-qa-framework-showcase/
 │   │   ├── setup/
 │   │   │   └── auth.setup.ts         # auth setup project
 │   │   ├── admin/
-│   │   │   ├── admin-orders-access.spec.ts
 │   │   │   └── admin-permissions-lifecycle.spec.ts
 │   │   ├── orders/
 │   │   │   └── existing-orders-history.spec.ts
@@ -124,15 +123,13 @@ playwright-qa-framework-showcase/
 │   │   ├── fixtures/
 │   │   ├── helpers/
 │   │   ├── pages/
-│   │   ├── data/
-│   │   └── utils/
+│   │   └── data/
 │   ├── playwright.base.config.ts
 │   ├── playwright.config.ts
 │   ├── playwright.integration.config.ts
 │   ├── playwright.api.config.ts
 │   ├── tsconfig.json
-│   ├── package.json
-│   └── global-setup.ts
+│   └── package.json
 ```
 
 ## Commands
@@ -204,7 +201,7 @@ npm run report:e2e
 - **Critical and serious** violations fail the test immediately — these map directly to WCAG failure criteria.
 - **Moderate and minor** violations are surfaced in the report but do not block CI, allowing progressive enforcement.
 - Public pages (home, login, cart, checkout) are covered without auth.
-- Authenticated pages (orders, profile, admin) reuse storage state from the E2E setup project.
+- Authenticated pages (orders, profile, admin) require storage state from the E2E setup project and fail fast if auth files are missing.
 - Reports are saved to `non-functional-tests/a11y/axe-reports/` and uploaded as CI artifacts.
 
 ## Performance Testing

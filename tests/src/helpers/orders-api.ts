@@ -67,6 +67,8 @@ export function deleteOrdersFromDb(orderIds: number[]): void {
 
   const dbFile = path.resolve(process.cwd(), '../web/dev.db');
   const db = new Database(dbFile);
+  db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 5000');
 
   try {
     const deleteItems = db.prepare('DELETE FROM order_items WHERE order_id = ?');
@@ -86,6 +88,8 @@ export function createOrdersInDbForUser(userEmail: string, seeds: ApiOrderSeed[]
 
   const dbFile = path.resolve(process.cwd(), '../web/dev.db');
   const db = new Database(dbFile);
+  db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 5000');
 
   try {
     const user = db.prepare('SELECT id FROM users WHERE email = ?').get(userEmail) as

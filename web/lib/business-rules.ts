@@ -40,7 +40,7 @@ export function validateRegistrationInput(input: {
 
 export function parseOrderId(value: string): number | null {
   const id = Number(value);
-  if (!Number.isFinite(id) || id <= 0) {
+  if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
     return null;
   }
   return id;

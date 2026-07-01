@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { checkA11y } from '../utils/axe';
 
 /**
@@ -14,25 +14,29 @@ import { checkA11y } from '../utils/axe';
 test.describe('A11y — Public pages', () => {
   test('home / catalog page has no critical or serious violations', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL('/');
+    await expect(page.getByTestId(/product-card-/).first()).toBeVisible();
     await checkA11y(page);
   });
 
   test('login page has no critical or serious violations', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL('/login');
+    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
     await checkA11y(page);
   });
 
   test('cart page has no critical or serious violations', async ({ page }) => {
     await page.goto('/cart');
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL('/cart');
+    await expect(page.getByText('Cart', { exact: false })).toBeVisible();
     await checkA11y(page);
   });
 
   test('checkout page has no critical or serious violations', async ({ page }) => {
     await page.goto('/checkout');
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL('/checkout');
+    await expect(page.getByRole('button', { name: 'Place Order' })).toBeVisible();
     await checkA11y(page);
   });
 });

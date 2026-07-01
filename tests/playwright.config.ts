@@ -10,9 +10,9 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
  *
  * Projects:
  *  - setup      : runs e2e/setup/auth.setup.ts once, generates .auth/admin.json & .auth/user.json
- *  - as-user    : all tests under e2e/ except auth/, purchase/, and admin/, with USER session
+ *  - as-user    : all tests under e2e/ except setup/, purchase/, and admin/, with USER session
  *  - as-admin   : tests under e2e/admin/, with admin session
- *  - as-guest   : tests under e2e/auth/, e2e/catalog/, and e2e/purchase/ (no session needed)
+ *  - as-guest   : tests under e2e/purchase/ (no session needed)
  *
  * webServer behaviour:
  *  - CI  (process.env.CI=true)  : Playwright boots Next.js and waits for it.
@@ -51,7 +51,7 @@ export default defineConfig({
     {
       name: 'as-user',
       dependencies: ['setup'],
-      testIgnore: [/e2e\/setup\//, /e2e\/auth\//, /e2e\/purchase\//, /e2e\/admin\//],
+      testIgnore: [/e2e\/setup\//, /e2e\/purchase\//, /e2e\/admin\//],
       use: {
         ...devices['Desktop Chrome'],
         storageState: '.auth/user.json',
@@ -73,7 +73,7 @@ export default defineConfig({
     {
       name: 'as-guest',
       dependencies: ['setup'],
-      testMatch: [/e2e\/auth\//, /e2e\/catalog\//, /e2e\/purchase\//],
+      testMatch: /e2e\/purchase\//,
       use: {
         ...devices['Desktop Chrome'],
         // No storageState — browser starts with no session cookie

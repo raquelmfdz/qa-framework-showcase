@@ -3,6 +3,14 @@ import Database from 'better-sqlite3';
 // Initialize the database connection
 export const db = new Database(process.env.DATABASE_FILE || './dev.db');
 
+// Improve concurrent-read/write reliability for local SQLite usage.
+try {
+  db.pragma('journal_mode = WAL');
+} catch {
+  // Ignore transient lock contention during startup/build and continue.
+}
+db.pragma('busy_timeout = 5000');
+
 // 1. Migrations (Table and index creation)
 const migrations = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -75,6 +83,9 @@ if (!userColumns.includes('last_name'))
 if (!userColumns.includes('zip_code'))
   db.prepare('ALTER TABLE users ADD COLUMN zip_code TEXT').run();
 if (!userColumns.includes('address')) db.prepare('ALTER TABLE users ADD COLUMN address TEXT').run();
+
+// Normalize persisted role values so authorization checks can use one canonical value.
+db.prepare('UPDATE users SET role = UPPER(TRIM(role)) WHERE role IS NOT NULL').run();
 
 // Export as default for easier app imports
 export default db;

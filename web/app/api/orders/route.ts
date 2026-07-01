@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * limit;
 
   // Admins see all orders; logged-in users see only their own
-  if (session?.user?.role === 'admin' || session?.user?.role === 'ADMIN') {
+  if (session?.user?.role === 'ADMIN') {
     const orders = db
       .prepare(
         `SELECT id, customer_name, customer_last_name, customer_email,
@@ -57,23 +57,27 @@ export async function POST(request: NextRequest) {
     return new NextResponse('All fields are required', { status: 400 });
   }
 
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id ? Number(session.user.id) : null;
   const guestToken = request.cookies.get('guest_token')?.value || '';
 
-  const cartItems = db
-    .prepare(
-      'SELECT ci.product_id, ci.quantity, p.price FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.guest_token = ?'
-    )
-    .all(guestToken) as Array<{ product_id: number; quantity: number; price: number }>;
+  const cartItems = userId
+    ? (db
+        .prepare(
+          'SELECT ci.product_id, ci.quantity, p.price FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.user_id = ?'
+        )
+        .all(userId) as Array<{ product_id: number; quantity: number; price: number }>)
+    : (db
+        .prepare(
+          'SELECT ci.product_id, ci.quantity, p.price FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.guest_token = ?'
+        )
+        .all(guestToken) as Array<{ product_id: number; quantity: number; price: number }>);
 
   if (!cartItems.length) {
     return new NextResponse('Cart is empty', { status: 400 });
   }
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  // Get user_id from session if logged in, otherwise NULL
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id ?? null;
 
   let orderId: number | bigint;
 
@@ -102,18 +106,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Clear the cart
-    db.prepare('DELETE FROM cart_items WHERE guest_token = ?').run(guestToken);
+    if (userId) {
+      db.prepare('DELETE FROM cart_items WHERE user_id = ?').run(userId);
+    } else {
+      db.prepare('DELETE FROM cart_items WHERE guest_token = ?').run(guestToken);
+    }
   } catch (err) {
     console.error('Order creation error:', err);
     return new NextResponse('Failed to create order', { status: 500 });
   }
 
-  // Clear the guest_token cookie now that the order is placed
+  // Clear guest cookie only for guest checkout.
   const response = NextResponse.json({ id: orderId });
-  response.cookies.set('guest_token', '', {
-    httpOnly: true,
-    path: '/',
-    maxAge: 0,
-  });
+  if (!userId) {
+    response.cookies.set('guest_token', '', {
+      httpOnly: true,
+      path: '/',
+      maxAge: 0,
+    });
+  }
   return response;
 }

@@ -40,7 +40,7 @@ export default function Navbar() {
     router.push('/login');
   };
 
-  const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'ADMIN';
+  const isAdmin = session?.user?.role === 'ADMIN';
 
   return (
     <header className="glass-panel sticky top-0 z-30 border-b border-slate-700/60">

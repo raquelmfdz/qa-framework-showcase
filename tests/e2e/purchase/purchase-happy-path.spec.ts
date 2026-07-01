@@ -68,8 +68,8 @@ test.describe('E2E Purchase Happy Path', () => {
     await cartPage.goToCheckout();
     await expect(page).toHaveURL('/checkout');
 
-    // Allow profile/cart hydration effects to finish before writing form values.
-    await page.waitForLoadState('networkidle');
+    // Wait for actionable checkout controls instead of relying on network idle.
+    await expect(checkoutPage.placeOrderButton).toBeVisible();
 
     await checkoutPage.fillShippingDetails(VALID_CHECKOUT_DETAILS);
 

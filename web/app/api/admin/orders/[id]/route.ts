@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  if (session.user.role !== 'admin' && session.user.role !== 'ADMIN') {
+  if (session.user.role !== 'ADMIN') {
     return new NextResponse('Forbidden', { status: 403 });
   }
 

@@ -4,13 +4,6 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "types": ["node"],
-    "paths": {
-      "@pages/*": ["./src/pages/*"],
-      "@fixtures/*": ["./src/fixtures/*"],
-      "@data/*": ["./src/data/*"],
-      "@helpers/*": ["./src/helpers/*"],
-      "@utils/*": ["./src/utils/*"]
-    },
     "noEmit": true
   },
   "include": ["src/**/*.ts", "e2e/**/*.ts", "integration/**/*.ts", "*.config.ts"],

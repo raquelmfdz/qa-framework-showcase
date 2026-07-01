@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../../../lib/db';
 import { parseOrderId } from '../../../../lib/business-rules';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../../lib/auth';
 
 // Types matching the DB schema
 interface Order {
@@ -23,8 +25,13 @@ interface OrderItem {
   unit_price: number;
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   const orderId = parseOrderId(params.id);
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
 
   // Validate the id param is a real number
   if (!orderId) {
@@ -45,6 +52,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   if (!order) {
     return new NextResponse('Order not found', { status: 404 });
+  }
+
+  const isAdmin = session.user.role === 'ADMIN';
+  const isOwner = Number(session.user.id) === order.user_id;
+  if (!isAdmin && !isOwner) {
+    return new NextResponse('Forbidden', { status: 403 });
   }
 
   // Fetch the items for this order, joining product name for display

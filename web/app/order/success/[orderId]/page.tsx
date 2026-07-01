@@ -1,8 +1,13 @@
 import { db } from '../../../../lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../../lib/auth';
+import { notFound, redirect } from 'next/navigation';
+import { parseOrderId } from '../../../../lib/business-rules';
 
 // Proper types instead of any — matches the DB schema exactly
 interface OrderRow {
   id: number;
+  user_id: number | null;
   total: number;
   created_at: string;
   status: string;
@@ -19,21 +24,33 @@ interface OrderItemRow {
   name: string;
 }
 
-export default function OrderSuccessPage({ params }: { params: { orderId: string } }) {
+export default async function OrderSuccessPage({ params }: { params: { orderId: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    redirect(`/login?redirect=/order/success/${params.orderId}`);
+  }
+
+  const parsedOrderId = parseOrderId(params.orderId);
+  if (!parsedOrderId) {
+    notFound();
+  }
+
   const order = db
     .prepare(
-      `SELECT id, total, created_at, status, customer_name, customer_last_name,
+      `SELECT id, user_id, total, created_at, status, customer_name, customer_last_name,
        customer_email, customer_zip_code, shipping_address
        FROM orders WHERE id = ?`
     )
-    .get(Number(params.orderId)) as OrderRow | undefined;
+    .get(parsedOrderId) as OrderRow | undefined;
 
   if (!order) {
-    return (
-      <div className="rounded-[28px] border border-orange-500/10 bg-slate-950/40 p-6 text-slate-300 shadow-2xl shadow-orange-950/20">
-        Order not found.
-      </div>
-    );
+    notFound();
+  }
+
+  const isAdmin = session.user.role === 'ADMIN';
+  const isOwner = Number(session.user.id) === order.user_id;
+  if (!isAdmin && !isOwner) {
+    notFound();
   }
 
   const items = db

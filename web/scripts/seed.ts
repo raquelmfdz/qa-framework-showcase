@@ -1,8 +1,6 @@
 import { db } from '../lib/db';
 import bcrypt from 'bcryptjs';
 
-const sql = db.prepare('SELECT COUNT(*) AS count FROM products');
-
 const products = [
   {
     name: 'Mountain Backpack',
@@ -127,8 +125,19 @@ function seed() {
 
   for (const product of products) {
     const existing = db
-      .prepare('SELECT id, image_url FROM products WHERE name = ?')
-      .get(product.name) as { id: number; image_url: string } | undefined;
+      .prepare(
+        'SELECT id, description, price, stock, image_url, category FROM products WHERE name = ?'
+      )
+      .get(product.name) as
+      | {
+          id: number;
+          description: string | null;
+          price: number;
+          stock: number;
+          image_url: string | null;
+          category: string | null;
+        }
+      | undefined;
 
     if (!existing) {
       insertProduct.run(
@@ -139,7 +148,13 @@ function seed() {
         product.image_url,
         product.category
       );
-    } else if (existing.image_url !== product.image_url) {
+    } else if (
+      existing.description !== product.description ||
+      existing.price !== product.price ||
+      existing.stock !== product.stock ||
+      existing.image_url !== product.image_url ||
+      existing.category !== product.category
+    ) {
       updateProduct.run(
         product.description,
         product.price,
@@ -165,7 +180,7 @@ function seed() {
     ).run(
       'admin@example.com',
       adminPasswordHash,
-      'admin',
+      'ADMIN',
       'Admin',
       'McAdminface',
       '00001',

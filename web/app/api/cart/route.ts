@@ -1,6 +1,8 @@
 import { db } from '../../../lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../lib/auth';
 
 const COOKIE_NAME = 'guest_token';
 const COOKIE_OPTIONS = {
@@ -10,6 +12,8 @@ const COOKIE_OPTIONS = {
 };
 
 async function getCartIdentifier(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id ? Number(session.user.id) : null;
   const guestToken = request.cookies.get(COOKIE_NAME)?.value || null;
   let activeGuestToken = guestToken;
   let setGuestCookie = false;
@@ -19,16 +23,50 @@ async function getCartIdentifier(request: NextRequest) {
     setGuestCookie = true;
   }
 
-  return { guestToken: activeGuestToken, setGuestCookie };
+  // Merge anonymous cart into account cart once the user is authenticated.
+  if (userId && guestToken) {
+    const guestItems = db
+      .prepare('SELECT product_id, quantity FROM cart_items WHERE guest_token = ?')
+      .all(guestToken) as Array<{ product_id: number; quantity: number }>;
+
+    const existingByUser = db.prepare(
+      'SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ?'
+    );
+    const updateQty = db.prepare('UPDATE cart_items SET quantity = ? WHERE id = ?');
+    const insertForUser = db.prepare(
+      'INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)'
+    );
+
+    for (const item of guestItems) {
+      const existing = existingByUser.get(userId, item.product_id) as
+        | { id: number; quantity: number }
+        | undefined;
+      if (existing) {
+        updateQty.run(existing.quantity + item.quantity, existing.id);
+      } else {
+        insertForUser.run(userId, item.product_id, item.quantity);
+      }
+    }
+
+    db.prepare('DELETE FROM cart_items WHERE guest_token = ?').run(guestToken);
+  }
+
+  return { userId, guestToken: activeGuestToken, setGuestCookie };
 }
 
 export async function GET(request: NextRequest) {
-  const { guestToken, setGuestCookie } = await getCartIdentifier(request);
-  const items = db
-    .prepare(
-      'SELECT ci.id, ci.quantity, p.id AS product_id, p.name, p.price, p.image_url FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.guest_token = ?'
-    )
-    .all(guestToken);
+  const { userId, guestToken, setGuestCookie } = await getCartIdentifier(request);
+  const items = userId
+    ? db
+        .prepare(
+          'SELECT ci.id, ci.quantity, p.id AS product_id, p.name, p.price, p.image_url FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.user_id = ?'
+        )
+        .all(userId)
+    : db
+        .prepare(
+          'SELECT ci.id, ci.quantity, p.id AS product_id, p.name, p.price, p.image_url FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.guest_token = ?'
+        )
+        .all(guestToken);
 
   const response = NextResponse.json(items);
   if (setGuestCookie && guestToken) {
@@ -51,10 +89,14 @@ export async function POST(request: NextRequest) {
     return new NextResponse('Product not found', { status: 404 });
   }
 
-  const { guestToken, setGuestCookie } = await getCartIdentifier(request);
-  const existing = db
-    .prepare('SELECT id, quantity FROM cart_items WHERE guest_token = ? AND product_id = ?')
-    .get(guestToken, productId) as { id: number; quantity: number } | undefined;
+  const { userId, guestToken, setGuestCookie } = await getCartIdentifier(request);
+  const existing = userId
+    ? (db
+        .prepare('SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ?')
+        .get(userId, productId) as { id: number; quantity: number } | undefined)
+    : (db
+        .prepare('SELECT id, quantity FROM cart_items WHERE guest_token = ? AND product_id = ?')
+        .get(guestToken, productId) as { id: number; quantity: number } | undefined);
 
   if (existing) {
     db.prepare('UPDATE cart_items SET quantity = ? WHERE id = ?').run(
@@ -62,11 +104,19 @@ export async function POST(request: NextRequest) {
       existing.id
     );
   } else {
-    db.prepare('INSERT INTO cart_items (guest_token, product_id, quantity) VALUES (?, ?, ?)').run(
-      guestToken,
-      productId,
-      quantity
-    );
+    if (userId) {
+      db.prepare('INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)').run(
+        userId,
+        productId,
+        quantity
+      );
+    } else {
+      db.prepare('INSERT INTO cart_items (guest_token, product_id, quantity) VALUES (?, ?, ?)').run(
+        guestToken,
+        productId,
+        quantity
+      );
+    }
   }
 
   const response = NextResponse.json({ success: true });
@@ -86,20 +136,34 @@ export async function PUT(request: NextRequest) {
     return new NextResponse('Invalid request body', { status: 400 });
   }
 
-  const { guestToken } = await getCartIdentifier(request);
-  const identifier = guestToken;
+  const { userId, guestToken } = await getCartIdentifier(request);
 
   if (quantity === 0) {
-    db.prepare('DELETE FROM cart_items WHERE product_id = ? AND guest_token = ?').run(
-      productId,
-      identifier
-    );
+    if (userId) {
+      db.prepare('DELETE FROM cart_items WHERE product_id = ? AND user_id = ?').run(
+        productId,
+        userId
+      );
+    } else {
+      db.prepare('DELETE FROM cart_items WHERE product_id = ? AND guest_token = ?').run(
+        productId,
+        guestToken
+      );
+    }
   } else {
-    db.prepare('UPDATE cart_items SET quantity = ? WHERE product_id = ? AND guest_token = ?').run(
-      quantity,
-      productId,
-      identifier
-    );
+    if (userId) {
+      db.prepare('UPDATE cart_items SET quantity = ? WHERE product_id = ? AND user_id = ?').run(
+        quantity,
+        productId,
+        userId
+      );
+    } else {
+      db.prepare('UPDATE cart_items SET quantity = ? WHERE product_id = ? AND guest_token = ?').run(
+        quantity,
+        productId,
+        guestToken
+      );
+    }
   }
 
   return NextResponse.json({ success: true });
@@ -108,16 +172,26 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const productId = body.productId ? Number(body.productId) : null;
-  const { guestToken } = await getCartIdentifier(request);
-  const identifier = guestToken;
+  const { userId, guestToken } = await getCartIdentifier(request);
 
   if (productId) {
-    db.prepare('DELETE FROM cart_items WHERE product_id = ? AND guest_token = ?').run(
-      productId,
-      identifier
-    );
+    if (userId) {
+      db.prepare('DELETE FROM cart_items WHERE product_id = ? AND user_id = ?').run(
+        productId,
+        userId
+      );
+    } else {
+      db.prepare('DELETE FROM cart_items WHERE product_id = ? AND guest_token = ?').run(
+        productId,
+        guestToken
+      );
+    }
   } else {
-    db.prepare('DELETE FROM cart_items WHERE guest_token = ?').run(identifier);
+    if (userId) {
+      db.prepare('DELETE FROM cart_items WHERE user_id = ?').run(userId);
+    } else {
+      db.prepare('DELETE FROM cart_items WHERE guest_token = ?').run(guestToken);
+    }
   }
 
   return NextResponse.json({ success: true });

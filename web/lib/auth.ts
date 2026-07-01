@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           // name will be null if not set — navbar falls back to email in that case
           name: user.name ?? null,
-          role: user.role,
+          role: String(user.role).toUpperCase(),
         };
       },
     }),
@@ -45,7 +45,7 @@ export const authOptions: NextAuthOptions = {
       // On sign in, persist id, role and name into the token
       if (user) {
         token.id = user.id;
-        token.role = (user as { role: string }).role;
+        token.role = String((user as { role: string }).role).toUpperCase();
         token.name = user.name ?? null;
       }
       // When update() is called from the profile page, refresh name in token
@@ -57,7 +57,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        session.user.role = String(token.role ?? '').toUpperCase();
         session.user.name = token.name as string | null;
       }
       return session;

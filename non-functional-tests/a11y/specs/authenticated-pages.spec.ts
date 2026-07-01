@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { checkA11y } from '../utils/axe';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,32 +14,43 @@ import * as path from 'path';
 const AUTH_STATE = path.resolve(__dirname, '../../../tests/.auth/user.json');
 const ADMIN_STATE = path.resolve(__dirname, '../../../tests/.auth/admin.json');
 
+if (!fs.existsSync(AUTH_STATE)) {
+  throw new Error(`Missing required auth storage state: ${AUTH_STATE}`);
+}
+
+if (!fs.existsSync(ADMIN_STATE)) {
+  throw new Error(`Missing required auth storage state: ${ADMIN_STATE}`);
+}
+
 test.describe('A11y — Authenticated user pages', () => {
   test.use({
-    storageState: fs.existsSync(AUTH_STATE) ? AUTH_STATE : undefined,
+    storageState: AUTH_STATE,
   });
 
   test('orders history page has no critical or serious violations', async ({ page }) => {
     await page.goto('/orders');
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL('/orders');
+    await expect(page.getByRole('heading', { name: 'My Orders' })).toBeVisible();
     await checkA11y(page);
   });
 
   test('profile page has no critical or serious violations', async ({ page }) => {
     await page.goto('/profile');
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL('/profile');
+    await expect(page.getByRole('heading', { name: 'Edit Profile' })).toBeVisible();
     await checkA11y(page);
   });
 });
 
 test.describe('A11y — Admin pages', () => {
   test.use({
-    storageState: fs.existsSync(ADMIN_STATE) ? ADMIN_STATE : undefined,
+    storageState: ADMIN_STATE,
   });
 
   test('admin orders page has no critical or serious violations', async ({ page }) => {
     await page.goto('/admin/orders');
-    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL('/admin/orders');
+    await expect(page.getByRole('heading', { name: 'Client Orders' })).toBeVisible();
     await checkA11y(page);
   });
 });

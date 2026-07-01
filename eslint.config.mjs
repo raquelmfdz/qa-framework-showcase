@@ -5,16 +5,16 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 
 export default defineConfig([
-  // 1. Archivos que ESLint debe ignorar por completo
+  // 1. Files ESLint should ignore entirely.
   {
     ignores: ['**/.next/**', '**/node_modules/**', '**/dist/**'],
   },
 
-  // 2. Configuración base recomendada para JavaScript y TypeScript
+  // 2. Recommended baseline config for JavaScript and TypeScript.
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
-  // 3. Tus personalizaciones para TypeScript (.ts y .tsx)
+  // 3. Project-specific TypeScript customization (.ts and .tsx).
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
@@ -34,12 +34,23 @@ export default defineConfig([
     },
   },
 
-  // 4. NUEVO: Configuración para permitir archivos CommonJS (.cjs) como Tailwind y PostCSS
+  // 4. Allow CommonJS config files (.cjs), such as Tailwind and PostCSS.
   {
     files: ['**/*.cjs'],
     languageOptions: {
       globals: {
-        ...globals.node, // Esto le dice a ESLint que "module" y "require" son válidos aquí
+        ...globals.node,
+      },
+    },
+  },
+
+  // 5. k6 runtime globals used by load scripts.
+  {
+    files: ['non-functional-tests/load/**/*.js'],
+    languageOptions: {
+      globals: {
+        __ENV: 'readonly',
+        __ITER: 'readonly',
       },
     },
   },

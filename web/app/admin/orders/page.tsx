@@ -37,7 +37,7 @@ export default function AdminOrdersPage() {
     else setLoading(false);
   }, [status]);
 
-  const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'ADMIN';
+  const isAdmin = session?.user?.role === 'ADMIN';
 
   if (status === 'loading') {
     return <div className="glass-panel rounded-xl p-6 text-orange-100">Loading…</div>;

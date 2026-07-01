@@ -15,10 +15,43 @@ env:
   WORKSPACE_CACHE_KEY: monorepo-state-${{ github.sha }}
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+  typecheck:
+    name: Typecheck (tests workspace)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Run tests workspace typecheck
+        run: npm run typecheck --workspace=tests
+
   # 1. CENTRAL BUILD JOB: Installs everything, compiles the app, and freezes the full monorepo state
   build:
     name: Build Application
     runs-on: ubuntu-latest
+    needs: [lint, typecheck]
     steps:
       - uses: actions/checkout@v4
 
@@ -103,6 +136,42 @@ jobs:
           path: tests/playwright-report/integration/
           retention-days: 14
 
+  api:
+    name: API Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore Workspace State
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .
+            !**/node_modules/.cache
+          key: ${{ env.WORKSPACE_CACHE_KEY }}
+          fail-on-cache-miss: true
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Run API tests
+        run: npm run test:api
+        env:
+          CI: true
+
+      - name: Upload API report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-report
+          path: tests/playwright-report/api/
+          retention-days: 14
+
   # 4. E2E TESTS: Restores state and runs isolated end-to-end suite
   e2e:
     name: E2E Tests
@@ -139,6 +208,7 @@ jobs:
           name: e2e-test-results
           path: |
             tests/playwright-report/e2e/
+            tests/.auth/
             tests/test-results/
           retention-days: 14
 
@@ -146,7 +216,7 @@ jobs:
   a11y:
     name: Accessibility Tests
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, e2e]
     steps:
       - uses: actions/checkout@v4
 
@@ -162,6 +232,12 @@ jobs:
             !**/node_modules/.cache
           key: ${{ env.WORKSPACE_CACHE_KEY }}
           fail-on-cache-miss: true
+
+      - name: Download auth state from e2e setup
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-test-results
+          path: .
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
