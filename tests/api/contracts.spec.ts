@@ -68,7 +68,7 @@ test.describe('API Contracts and Guardrails', () => {
     await expect(res.text()).resolves.toMatch(/all fields are required/i);
   });
 
-  test('GET /api/orders/:id denies cross-user access with 403', async ({ request, baseURL }) => {
+  test('GET /api/orders/:id denies cross-user access with 403', async ({ baseURL }) => {
     const createdOrderIds: number[] = [];
     const backpackId = resolveProductIdByName(SEED_PRODUCTS.mountainBackpack.name);
 

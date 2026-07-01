@@ -7,7 +7,14 @@ import globals from 'globals';
 export default defineConfig([
   // 1. Files ESLint should ignore entirely.
   {
-    ignores: ['**/.next/**', '**/node_modules/**', '**/dist/**'],
+    ignores: [
+      '**/.next/**',
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+      '**/axe-reports/**',
+    ],
   },
 
   // 2. Recommended baseline config for JavaScript and TypeScript.
@@ -51,6 +58,16 @@ export default defineConfig([
       globals: {
         __ENV: 'readonly',
         __ITER: 'readonly',
+      },
+    },
+  },
+
+  // 6. Node runtime scripts used by GitHub workflows.
+  {
+    files: ['.github/scripts/**/*.js', '.github/scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
       },
     },
   },
