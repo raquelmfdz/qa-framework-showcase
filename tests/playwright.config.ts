@@ -9,8 +9,8 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
  * E2E config: tests hit a REAL backend (real DB, real NextAuth session).
  *
  * Projects:
- *  - setup      : runs e2e/setup/auth.setup.ts once, generates .auth/admin.json & .auth/user.json
- *  - as-user    : all tests under e2e/ except setup/, purchase/, and admin/, with USER session
+ *  - globalSetup : generates .auth/admin.json & .auth/user.json before the run starts
+ *  - as-user    : all tests under e2e/ except purchase/ and admin/, with USER session
  *  - as-admin   : tests under e2e/admin/, with admin session
  *  - as-fresh-login : tests under e2e/purchase/ (no preloaded session)
  *
@@ -22,6 +22,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 export default defineConfig({
   ...baseConfig,
   testDir: './e2e',
+  globalSetup: './global.setup.ts',
   reporter: [
     ['html', { outputFolder: 'playwright-report/e2e', open: 'never' }],
     ['list'],
@@ -47,27 +48,19 @@ export default defineConfig({
   },
 
   projects: [
-    // ── 1. Auth setup (runs first, no storageState dependency) ──────────────
-    {
-      name: 'setup',
-      testMatch: /e2e\/setup\/auth\.setup\.ts/,
-    },
-
-    // ── 2. Tests as an authenticated regular USER ────────────────────────────
+    // ── 1. Tests as an authenticated regular USER ────────────────────────────
     {
       name: 'as-user',
-      dependencies: ['setup'],
-      testIgnore: [/e2e\/setup\//, /e2e\/purchase\//, /e2e\/admin\//],
+      testIgnore: [/e2e\/purchase\//, /e2e\/admin\//],
       use: {
         ...devices['Desktop Chrome'],
         storageState: '.auth/user.json',
       },
     },
 
-    // ── 3. Tests as an authenticated ADMIN ──────────────────────────────────
+    // ── 2. Tests as an authenticated ADMIN ──────────────────────────────────
     {
       name: 'as-admin',
-      dependencies: ['setup'],
       testMatch: /e2e\/admin\//,
       use: {
         ...devices['Desktop Chrome'],
@@ -75,7 +68,7 @@ export default defineConfig({
       },
     },
 
-    // ── 4. Fresh browser tests (no preloaded auth storage state) ─────────────
+    // ── 3. Fresh browser tests (no preloaded auth storage state) ─────────────
     {
       name: 'as-fresh-login',
       testMatch: /e2e\/purchase\//,

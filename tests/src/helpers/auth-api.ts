@@ -2,7 +2,7 @@ import { APIRequestContext, expect } from '@playwright/test';
 
 /**
  * Logs a user in by talking directly to NextAuth's REST endpoints —
- * no browser, no UI interaction. Used by the auth setup project to
+ * no browser, no UI interaction. Used by Playwright globalSetup to
  * produce a storageState per role (see playwright.config.ts -> projects).
  *
  * NextAuth v4 Credentials flow:

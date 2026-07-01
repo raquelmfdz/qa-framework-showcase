@@ -6,6 +6,12 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "e2e/**/*.ts", "integration/**/*.ts", "*.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "e2e/**/*.ts",
+    "integration/**/*.ts",
+    "*.config.ts",
+    "global.setup.ts"
+  ],
   "exclude": ["node_modules", "dist", "playwright-report", "test-results"]
 }
