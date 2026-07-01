@@ -157,9 +157,9 @@ The GitHub Actions workflow in `.github/workflows/run-tests.yml` supports two ex
   - Runs k6 smoke scenario (`non-functional-tests/load/scenarios/smoke.js`).
 
 - Manual runs (`Run workflow` in GitHub Actions): selectable scope and layers.
+  - `layer_selection`: choose `selected` (use checkboxes below) or `all` (run every layer).
   - `test_scope`: choose `smoke` or `full`.
   - Layer toggles: `run_unit`, `run_integration`, `run_api`, `run_e2e`, `run_a11y`, `run_load`.
-  - `run_all_layers`: when enabled, runs every layer regardless of individual toggles.
 
 Notes:
 
