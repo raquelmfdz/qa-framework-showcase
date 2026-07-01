@@ -20,7 +20,9 @@ export default defineConfig({
   testDir: './integration',
   reporter: [['html', { outputFolder: 'playwright-report/integration', open: 'never' }], ['list']],
   webServer: {
-    command: process.env.CI ? 'npm run start --workspace=web' : 'npm run dev --workspace=web',
+    command: process.env.CI
+      ? 'npm run seed --workspace=web && npm run start --workspace=web'
+      : 'npm run dev --workspace=web',
     cwd: path.resolve(__dirname, '..'),
     url: BASE_URL,
     env: {

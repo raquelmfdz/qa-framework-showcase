@@ -55,19 +55,9 @@ test.describe('Admin Orders — mocked API states', () => {
   test('USER role is denied access to admin panel', async ({ page }) => {
     await mockSession(page, 'user');
 
-    // The admin route should return 403 for non-admin users
-    await page.route('**/api/admin/**', (route) =>
-      route.fulfill({ status: 403, body: 'Forbidden' })
-    );
-
     await page.goto('/admin/orders');
-
-    // Either redirected away or an access-denied message is shown
-    const isRedirected = !page.url().includes('/admin');
-    const hasForbiddenMsg = await page
-      .getByText(/forbidden|not authorized|access denied/i)
-      .isVisible();
-    expect(isRedirected || hasForbiddenMsg).toBeTruthy();
+    await expect(page.getByRole('heading', { name: /access denied/i })).toBeVisible();
+    await expect(page.getByText(/administrator account/i)).toBeVisible();
   });
 
   test('shows error when admin orders API returns 500', async ({ page, adminOrdersPage }) => {

@@ -7,7 +7,7 @@ A clean Next.js 14 App Router demo application built for Playwright end-to-end t
 ```bash
 cd web
 npm install
-cp .env.example .env
+cp ../.env.example .env
 npm run seed
 npm run dev
 ```
@@ -16,8 +16,8 @@ Open `http://localhost:3000`.
 
 ## Accounts
 
-- `user@demo.com` / `password123` (role: USER)
-- `admin@demo.com` / `password123` (role: ADMIN)
+- `user@example.com` / `!1passworD` (role: USER)
+- `admin@example.com` / `Password1!` (role: admin)
 
 ## Scripts
 

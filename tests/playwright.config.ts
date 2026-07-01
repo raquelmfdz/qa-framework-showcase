@@ -10,9 +10,9 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
  *
  * Projects:
  *  - setup      : runs e2e/setup/auth.setup.ts once, generates .auth/admin.json & .auth/user.json
- *  - as-user    : all tests under e2e/ except auth/ and admin/, with USER session
+ *  - as-user    : all tests under e2e/ except auth/, purchase/, and admin/, with USER session
  *  - as-admin   : tests under e2e/admin/, with admin session
- *  - as-guest   : tests under e2e/auth/ and e2e/catalog/ (no session needed)
+ *  - as-guest   : tests under e2e/auth/, e2e/catalog/, and e2e/purchase/ (no session needed)
  *
  * webServer behaviour:
  *  - CI  (process.env.CI=true)  : Playwright boots Next.js and waits for it.
@@ -22,10 +22,11 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 export default defineConfig({
   ...baseConfig,
   testDir: './e2e',
-  globalSetup: './global-setup.ts',
   reporter: [['html', { outputFolder: 'playwright-report/e2e', open: 'never' }], ['list']],
   webServer: {
-    command: process.env.CI ? 'npm run start --workspace=web' : 'npm run dev --workspace=web',
+    command: process.env.CI
+      ? 'npm run db:reset --workspace=web && npm run start --workspace=web'
+      : 'npm run dev --workspace=web',
     cwd: path.resolve(__dirname, '..'),
     url: BASE_URL,
     env: {
@@ -50,7 +51,7 @@ export default defineConfig({
     {
       name: 'as-user',
       dependencies: ['setup'],
-      testIgnore: [/e2e\/setup\//, /e2e\/auth\//, /e2e\/admin\//],
+      testIgnore: [/e2e\/setup\//, /e2e\/auth\//, /e2e\/purchase\//, /e2e\/admin\//],
       use: {
         ...devices['Desktop Chrome'],
         storageState: '.auth/user.json',
@@ -72,7 +73,7 @@ export default defineConfig({
     {
       name: 'as-guest',
       dependencies: ['setup'],
-      testMatch: [/e2e\/auth\//, /e2e\/catalog\//],
+      testMatch: [/e2e\/auth\//, /e2e\/catalog\//, /e2e\/purchase\//],
       use: {
         ...devices['Desktop Chrome'],
         // No storageState — browser starts with no session cookie

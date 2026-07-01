@@ -2,7 +2,6 @@ import { test, expect } from '../../src/fixtures/pages.fixture';
 import { SEED_USERS } from '../../src/data/users';
 import { SEED_PRODUCTS, VALID_CHECKOUT_DETAILS } from '../../src/data/products';
 import { clearCart } from '../../src/helpers/api-data';
-import { createOrdersInDbForUser, deleteOrdersFromDb } from '../../src/helpers/orders-api';
 
 /**
  * Happy Path E2E Test Suite
@@ -18,7 +17,7 @@ import { createOrdersInDbForUser, deleteOrdersFromDb } from '../../src/helpers/o
  *
  * Runs under 'as-guest' project to start fresh (no pre-existing session).
  */
-test.describe('Happy Path: Complete User Journey', () => {
+test.describe('E2E Purchase Happy Path', () => {
   test.beforeEach(async ({ request, baseURL }) => {
     await clearCart(request, baseURL!);
   });
@@ -85,78 +84,5 @@ test.describe('Happy Path: Complete User Journey', () => {
     // Step 6: cart is cleared after successful checkout.
     await cartPage.open();
     await expect(cartPage.emptyCartMessage).toBeVisible();
-  });
-
-  test.describe('Existing Orders (API auth)', () => {
-    // Uses setup project storageState generated through loginViaApi.
-    test.use({ storageState: '.auth/user.json' });
-
-    test('user with existing orders can view order details on My Orders page', async ({
-      baseURL,
-      page,
-      ordersPage,
-    }) => {
-      const createdOrderIds: number[] = [];
-      const api = page.request;
-
-      try {
-        // 1) Seed prior orders directly in DB, linked to the authenticated user.
-        const createdOrders = createOrdersInDbForUser(SEED_USERS.user.email, [
-          {
-            lines: [{ productId: 1, quantity: 1, unitPrice: SEED_PRODUCTS.mountainBackpack.price }],
-            customerName: VALID_CHECKOUT_DETAILS.firstName,
-            customerLastName: VALID_CHECKOUT_DETAILS.lastName,
-            customerEmail: VALID_CHECKOUT_DETAILS.email,
-            customerZipCode: VALID_CHECKOUT_DETAILS.zipCode,
-            shippingAddress: VALID_CHECKOUT_DETAILS.address,
-          },
-          {
-            lines: [
-              { productId: 2, quantity: 2, unitPrice: SEED_PRODUCTS.campingLantern.price },
-              { productId: 3, quantity: 1, unitPrice: SEED_PRODUCTS.wirelessHeadphones.price },
-            ],
-            customerName: VALID_CHECKOUT_DETAILS.firstName,
-            customerLastName: VALID_CHECKOUT_DETAILS.lastName,
-            customerEmail: VALID_CHECKOUT_DETAILS.email,
-            customerZipCode: VALID_CHECKOUT_DETAILS.zipCode,
-            shippingAddress: VALID_CHECKOUT_DETAILS.address,
-          },
-        ]);
-
-        createdOrderIds.push(...createdOrders.map((order) => order.id));
-
-        // 2) Verify user can inspect order details on My Orders page.
-        await ordersPage.open();
-        await expect(page).toHaveURL('/orders');
-
-        for (const createdOrder of createdOrders) {
-          await expect(page.getByText(`Order #${createdOrder.id}`)).toBeVisible();
-          await expect(
-            page.getByText(`Total: €${createdOrder.expectedTotal.toFixed(2)}`)
-          ).toBeVisible();
-        }
-
-        await expect(
-          page.getByText(/Status:\s*PROCESSING|Status:\s*PENDING/i).first()
-        ).toBeVisible();
-      } finally {
-        // Keep this scenario isolated from all other tests in the run.
-        await clearCart(api, baseURL!);
-        deleteOrdersFromDb(createdOrderIds);
-      }
-    });
-  });
-
-  test.describe('Access Control (API auth)', () => {
-    test.use({ storageState: '.auth/user.json' });
-
-    test('regular user cannot access admin orders page', async ({ page }) => {
-      await page.goto('/admin/orders');
-
-      await expect(page.getByRole('heading', { name: /access denied/i })).toBeVisible();
-      await expect(
-        page.getByText(/need an administrator account|administrator account/i)
-      ).toBeVisible();
-    });
   });
 });

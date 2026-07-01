@@ -7,18 +7,29 @@ import { Page, Locator } from '@playwright/test';
  * name", "cart badge updates after adding an item").
  */
 export class Navbar {
+  readonly userMenuButton: Locator;
+  readonly loginLink: Locator;
+  readonly myOrdersLink: Locator;
   readonly cartLink: Locator;
   readonly cartItemCount: Locator;
-  readonly logoutButton: Locator;
+  readonly logoutMenuItem: Locator;
 
   constructor(private readonly page: Page) {
+    this.userMenuButton = page.getByTestId('nav-user-menu');
+    this.loginLink = page.getByTestId('nav-login');
+    this.myOrdersLink = page.getByTestId('nav-my-orders');
     this.cartLink = page.getByRole('link', { name: /cart/i });
     this.cartItemCount = page.getByTestId('cart-item-count');
-    this.logoutButton = page.getByRole('button', { name: /log out|sign out/i });
+    this.logoutMenuItem = page.getByRole('menuitem', { name: /logout|log out|sign out/i });
+  }
+
+  async openUserMenu(): Promise<void> {
+    await this.userMenuButton.click();
   }
 
   async logout(): Promise<void> {
-    await this.logoutButton.click();
+    await this.openUserMenu();
+    await this.logoutMenuItem.click();
   }
 
   async goToCart(): Promise<void> {
