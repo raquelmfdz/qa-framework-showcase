@@ -149,22 +149,26 @@ npm run test:a11y
 
 ## CI Modes and Manual Layer Selection
 
-CI execution supports automatic runs and one manual run form:
+CI execution supports automatic runs, one manual run form, and a nightly full suite:
 
 - Push/PR runs: optimized default CI.
   - Always runs full lint, typecheck, build, and unit tests.
-  - Runs smoke-only subsets for Playwright API, integration, E2E, and a11y (`@smoke`).
-  - Runs k6 smoke scenario (`non-functional-tests/load/scenarios/smoke.js`).
+  - Runs smoke-only subsets for Playwright API, integration, and E2E (`@smoke`).
+  - Runs a11y smoke on `main` pushes and on PRs that touch UI/auth paths.
+  - Does not run load tests on push/PR.
 
 - Manual run (`Run workflow` on `.github/workflows/run-tests.yml`):
   - `test_scope`: choose `smoke` or `full`.
   - Layer checkboxes (default checked): `run_unit`, `run_integration`, `run_api`, `run_e2e`, `run_a11y`, `run_load`.
   - Keep all checked to run everything, or uncheck layers you want to skip.
 
+- Nightly full run (`.github/workflows/nightly-full-suite.yml`):
+  - Runs full unit/API/integration/E2E/a11y/load with no user inputs.
+
 Notes:
 
 - Unit tests are intentionally always full when the unit layer is selected.
-- If `run_a11y` is selected, E2E auth-state generation is also executed so authenticated a11y checks have storage state available.
+- If a11y is selected, E2E auth-state generation is also executed so authenticated a11y checks have storage state available.
 
 For K6 load tests (requires [k6 installed](https://k6.io/docs/get-started/installation/)):
 
