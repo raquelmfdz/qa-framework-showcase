@@ -141,3 +141,88 @@ jobs:
             tests/playwright-report/e2e/
             tests/test-results/
           retention-days: 14
+
+  # 5. A11Y TESTS: axe-core accessibility checks on critical pages
+  a11y:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore Workspace State
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .
+            !**/node_modules/.cache
+          key: ${{ env.WORKSPACE_CACHE_KEY }}
+          fail-on-cache-miss: true
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Run a11y tests
+        run: npm run test:a11y
+        env:
+          CI: true
+
+      - name: Upload a11y report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report
+          path: non-functional-tests/a11y/axe-reports/html/
+          retention-days: 14
+
+  # 6. K6 LOAD TESTS: smoke only in CI; full ramp is a manual/scheduled run
+  load:
+    name: Load Tests (Smoke)
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore Workspace State
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .
+            !**/node_modules/.cache
+          key: ${{ env.WORKSPACE_CACHE_KEY }}
+          fail-on-cache-miss: true
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install k6 -y
+
+      - name: Seed database
+        run: npm run seed
+        env:
+          CI: true
+
+      - name: Start app in background
+        run: npm run start &
+        env:
+          CI: true
+          NEXTAUTH_URL: ${{ env.BASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+
+      - name: Wait for app to be ready
+        run: npx wait-on ${{ env.BASE_URL }} --timeout 60000
+
+      - name: Run k6 smoke test
+        run: npm run k6:smoke -- --env BASE_URL=${{ env.BASE_URL }}

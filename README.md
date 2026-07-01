@@ -4,15 +4,17 @@ Playwright + TypeScript QA suite for the demo e-commerce application, with unit 
 
 ## Stack
 
-| Layer                         | Tool                                                |
-| ----------------------------- | --------------------------------------------------- |
-| Unit (business rules)         | [Vitest](https://vitest.dev/) in `web/`             |
-| API contracts                 | [Playwright](https://playwright.dev/) request tests |
-| Integration (UI + mocked API) | [Playwright](https://playwright.dev/)               |
-| E2E (real backend)            | [Playwright](https://playwright.dev/)               |
-| Language                      | TypeScript 5                                        |
-| Auth                          | NextAuth v4 (Credentials + JWT session)             |
-| DB                            | SQLite (`better-sqlite3`)                           |
+| Layer                         | Tool                                                           |
+| ----------------------------- | -------------------------------------------------------------- |
+| Unit (business rules)         | [Vitest](https://vitest.dev/) in `web/`                        |
+| API contracts                 | [Playwright](https://playwright.dev/) request tests            |
+| Integration (UI + mocked API) | [Playwright](https://playwright.dev/)                          |
+| E2E (real backend)            | [Playwright](https://playwright.dev/)                          |
+| Accessibility                 | [axe-core](https://github.com/dequelabs/axe-core) + Playwright |
+| Performance / Load            | [k6](https://k6.io/)                                           |
+| Language                      | TypeScript 5                                                   |
+| Auth                          | NextAuth v4 (Credentials + JWT session)                        |
+| DB                            | SQLite (`better-sqlite3`)                                      |
 
 ## Quick Start
 
@@ -55,7 +57,16 @@ playwright-qa-framework-showcase/
 ├── package-lock.json
 ├── non-functional-tests/
 │   ├── a11y/
+│   │   ├── specs/
+│   │   │   ├── public-pages.spec.ts
+│   │   │   └── authenticated-pages.spec.ts
+│   │   ├── axe-reports/                       # generated (git-ignored)
+│   │   ├── playwright.a11y.config.ts
+│   │   └── package.json
 │   └── load/
+│       └── scenarios/
+│           ├── smoke.js                       # 1 VU health check — runs in CI
+│           └── baseline-ramp.js               # ramp to 10 VUs — manual/scheduled
 │
 ├── web/
 │   ├── app/
@@ -140,6 +151,19 @@ npm run test:e2e
 npm run test:a11y
 ```
 
+For K6 load tests (requires [k6 installed](https://k6.io/docs/get-started/installation/)):
+
+```bash
+# smoke — quick health check (1 VU, 30s)
+npm run k6:smoke
+
+# baseline ramp — latency baseline (10 VUs, ~2m)
+npm run k6:ramp
+
+# target a different environment
+k6 run --env BASE_URL=https://staging.example.com non-functional-tests/load/scenarios/smoke.js
+```
+
 From `tests/` workspace:
 
 ```bash
@@ -172,6 +196,23 @@ npm run report:e2e
 - E2E and integration use different DB boot strategies on purpose.
 - E2E is destructive (`db:reset`) because it depends on auth setup and user/session consistency from a blank state.
 - Integration is non-destructive (`seed`) because tests are mostly mocked and only require baseline catalog presence for SSR pages.
+
+## Accessibility Testing
+
+- Axe-core checks run via Playwright against real app pages using WCAG 2.1 AA rules.
+- **Critical and serious** violations fail the test immediately — these map directly to WCAG failure criteria.
+- **Moderate and minor** violations are surfaced in the report but do not block CI, allowing progressive enforcement.
+- Public pages (home, login, cart, checkout) are covered without auth.
+- Authenticated pages (orders, profile, admin) reuse storage state from the E2E setup project.
+- Reports are saved to `non-functional-tests/a11y/axe-reports/` and uploaded as CI artifacts.
+
+## Performance Testing
+
+- K6 tests are API and page-level load tests, not browser-based — fast and low-cost to run.
+- **`smoke.js`** runs in CI on every push: 1 VU for 30 seconds, validates all critical endpoints respond correctly under minimal load.
+- **`baseline-ramp.js`** is a manual or scheduled run: ramps to 10 VUs to establish p95 latency baselines and detect degradation over time.
+- Thresholds enforced: p95 response time under 500–600ms, error rate under 1%.
+- Auth-protected endpoint guardrails are included to verify 401/403 responses hold under load.
 
 ## Why Unit Tests In A QA Showcase
 

@@ -1,0 +1,14 @@
+{
+  "name": "a11y-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:a11y": "playwright test --config=playwright.a11y.config.ts",
+    "report:a11y": "playwright show-report axe-reports/html"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.9.1",
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^20.14.2"
+  }
+}
