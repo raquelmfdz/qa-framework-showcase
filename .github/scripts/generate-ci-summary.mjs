@@ -45,6 +45,57 @@ function table(rows) {
   return lines;
 }
 
+function fmtNumber(value) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+  if (Number.isInteger(value)) return String(value);
+  return value.toFixed(2);
+}
+
+function fmtRate(value) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+  return `${(value * 100).toFixed(2)}%`;
+}
+
+function formatMetricValue(metric, key, value) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+
+  if (metric?.contains === 'time' || key.startsWith('p(') || key === 'avg' || key === 'min' || key === 'max' || key === 'med') {
+    return fmtMs(value);
+  }
+
+  if (key === 'rate') {
+    return fmtRate(value);
+  }
+
+  return fmtNumber(value);
+}
+
+function getRunDurationMs(report) {
+  if (typeof report?.state?.testRunDurationMs === 'number') {
+    return report.state.testRunDurationMs;
+  }
+
+  const iterationMetric = report?.metrics?.iterations?.values;
+  if (
+    typeof iterationMetric?.count === 'number' &&
+    typeof iterationMetric?.rate === 'number' &&
+    iterationMetric.rate > 0
+  ) {
+    return (iterationMetric.count / iterationMetric.rate) * 1000;
+  }
+
+  const requestMetric = report?.metrics?.http_reqs?.values;
+  if (
+    typeof requestMetric?.count === 'number' &&
+    typeof requestMetric?.rate === 'number' &&
+    requestMetric.rate > 0
+  ) {
+    return (requestMetric.count / requestMetric.rate) * 1000;
+  }
+
+  return null;
+}
+
 function parsePlaywrightReport(report) {
   const rows = [];
 
@@ -111,9 +162,9 @@ function parseVitestJson(report) {
   return rows;
 }
 
-function parseK6Summary(report) {
-  const rows = [];
-  const runMs = report?.state?.testRunDurationMs;
+function renderK6Summary(report) {
+  const lines = [];
+  const runMs = getRunDurationMs(report);
 
   function asItems(value) {
     if (Array.isArray(value)) return value;
@@ -140,11 +191,19 @@ function parseK6Summary(report) {
 
     for (const [metricName, metric] of Object.entries(metrics ?? {})) {
       for (const [thresholdName, threshold] of Object.entries(metric?.thresholds ?? {})) {
+        const match = String(thresholdName).match(/^(.+?)(<=|>=|<|>)(.+)$/);
+        const observedKey = match?.[1] ?? '';
         thresholdRows.push({
-          testCase: `threshold: ${String(metricName).replace(/\|/g, '\\|')} > ${String(thresholdName).replace(/\|/g, '\\|')}`,
+          metricName: String(metricName),
+          thresholdName: String(thresholdName),
+          operator: match?.[2] ?? '',
+          limit: match?.[3]?.trim() ?? '',
           status: threshold?.ok === false ? 'failed' : 'passed',
-          duration: fmtMs(runMs),
-          retries: 0,
+          observed: formatMetricValue(
+            metric,
+            observedKey,
+            metric?.values?.[observedKey]
+          ),
         });
       }
     }
@@ -157,16 +216,80 @@ function parseK6Summary(report) {
   const thresholdRows = collectThresholdRows(report?.metrics ?? {});
   const hasFailedThreshold = thresholdRows.some((row) => row.status === 'failed');
 
-  rows.push({
-    testCase: 'Load smoke test',
-    status: hasFailedCheck || hasFailedThreshold ? 'failed' : 'passed',
-    duration: fmtMs(runMs),
-    retries: 0,
-  });
+  const totalChecks = checks.length;
+  const passedChecks = checks.filter((check) => Number(check?.fails ?? 0) === 0).length;
+  const httpReqs = report?.metrics?.http_reqs?.values;
+  const vusMax = report?.metrics?.vus_max?.values?.max ?? report?.metrics?.vus?.values?.max;
+  const keyMetrics = [
+    { name: 'http_req_duration', stat: 'p(95)', label: 'HTTP latency p95' },
+    { name: 'catalog_latency', stat: 'p(95)', label: 'Catalog latency p95' },
+    { name: 'api_latency', stat: 'p(95)', label: 'API latency p95' },
+    { name: 'http_req_failed', stat: 'rate', label: 'HTTP failure rate' },
+    { name: 'error_rate', stat: 'rate', label: 'Check failure rate' },
+  ]
+    .map((entry) => {
+      const metric = report?.metrics?.[entry.name];
+      const value = metric?.values?.[entry.stat];
+      return {
+        label: entry.label,
+        observed: formatMetricValue(metric, entry.stat, value),
+      };
+    })
+    .filter((entry) => entry.observed !== 'n/a');
 
-  rows.push(...thresholdRows);
+  lines.push(`Status: ${hasFailedCheck || hasFailedThreshold ? 'failed' : 'passed'}`);
+  lines.push(`Duration: ${fmtMs(runMs)}`);
+  lines.push('Scenario: smoke load test');
+  if (typeof vusMax === 'number') {
+    lines.push(`Peak VUs: ${fmtNumber(vusMax)}`);
+  }
+  if (typeof httpReqs?.count === 'number' || typeof httpReqs?.rate === 'number') {
+    lines.push(
+      `HTTP requests: ${fmtNumber(httpReqs?.count)} total at ${fmtNumber(httpReqs?.rate)}/s`
+    );
+  }
+  if (totalChecks > 0) {
+    lines.push(`Checks: ${passedChecks}/${totalChecks} passed`);
+  }
+  lines.push('');
 
-  return rows;
+  if (keyMetrics.length) {
+    lines.push('| KPI | Observed |');
+    lines.push('|---|---:|');
+    for (const metric of keyMetrics) {
+      lines.push(`| ${metric.label} | ${metric.observed} |`);
+    }
+    lines.push('');
+  }
+
+  if (!thresholdRows.length) {
+    lines.push('_No threshold results found for this suite._');
+    lines.push('');
+    return lines;
+  }
+
+  const hasObservedValues = thresholdRows.some((row) => row.observed !== 'n/a');
+
+  if (hasObservedValues) {
+    lines.push('| Metric | Limit | Observed | Status |');
+    lines.push('|---|---|---:|---|');
+    for (const row of thresholdRows) {
+      lines.push(
+        `| ${row.metricName.replace(/\|/g, '\\|')} | ${`${row.operator}${row.limit}`.replace(/\|/g, '\\|')} | ${row.observed} | ${row.status} |`
+      );
+    }
+  } else {
+    lines.push('| Metric | Limit | Status |');
+    lines.push('|---|---|---|');
+    for (const row of thresholdRows) {
+      lines.push(
+        `| ${row.metricName.replace(/\|/g, '\\|')} | ${`${row.operator}${row.limit}`.replace(/\|/g, '\\|')} | ${row.status} |`
+      );
+    }
+  }
+  lines.push('');
+
+  return lines;
 }
 
 const sections = [
@@ -198,7 +321,7 @@ const sections = [
   {
     title: 'Performance',
     file: path.join(summaryDir, 'performance.json'),
-    parser: parseK6Summary,
+    render: renderK6Summary,
   },
 ];
 
@@ -208,9 +331,13 @@ output.push('');
 
 for (const section of sections) {
   const report = readJson(section.file);
-  const rows = report ? section.parser(report) : [];
   output.push(`### ${section.title}`);
-  output.push(...table(rows));
+  if (section.render) {
+    output.push(...(report ? section.render(report) : ['_No result file found for this suite._', '']));
+  } else {
+    const rows = report ? section.parser(report) : [];
+    output.push(...table(rows));
+  }
 }
 
 fs.appendFileSync(outFile, `${output.join('\n')}\n`);
