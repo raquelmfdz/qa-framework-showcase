@@ -81,7 +81,7 @@ export default function HomePage({
       <ProductGrid products={products} />
 
       <div className="rounded-3xl border border-orange-500/10 bg-slate-950/40 p-4 text-sm text-slate-300 shadow-2xl shadow-orange-950/10">
-        Página {page} de {totalPages} · mostrando hasta {PAGE_SIZE} productos por página.
+        Página {page} de {totalPages} · mostrando {PAGE_SIZE} productos por página.
       </div>
 
       <nav aria-label="Pagination" className="flex flex-wrap items-center justify-center gap-2">

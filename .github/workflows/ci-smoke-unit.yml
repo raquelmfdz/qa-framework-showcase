@@ -561,46 +561,58 @@ jobs:
         run: mkdir -p artifacts/summary
 
       - name: Download E2E summary data
+        if: env.E2E_JOB_RESULT != 'skipped'
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: summary-e2e
           path: artifacts/summary
+          if-no-artifact-found: ignore
 
       - name: Download integration summary data
+        if: env.INTEGRATION_JOB_RESULT != 'skipped'
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: summary-integration
           path: artifacts/summary
+          if-no-artifact-found: ignore
 
       - name: Download API summary data
+        if: env.API_JOB_RESULT != 'skipped'
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: summary-api
           path: artifacts/summary
+          if-no-artifact-found: ignore
 
       - name: Download unit summary data
+        if: env.UNIT_JOB_RESULT != 'skipped'
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: summary-unit
           path: artifacts/summary
+          if-no-artifact-found: ignore
 
       - name: Download A11y summary data
+        if: env.A11Y_JOB_RESULT != 'skipped'
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: summary-a11y
           path: artifacts/summary
+          if-no-artifact-found: ignore
 
       - name: Download performance summary data
+        if: env.LOAD_JOB_RESULT != 'skipped'
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: summary-performance
           path: artifacts/summary
+          if-no-artifact-found: ignore
 
       - name: Generate GitHub job summary
         run: node .github/scripts/generate-ci-summary.mjs
