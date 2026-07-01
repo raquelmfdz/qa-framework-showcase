@@ -14,15 +14,9 @@ import * as path from 'path';
 const AUTH_STATE = path.resolve(__dirname, '../../../tests/.auth/user.json');
 const ADMIN_STATE = path.resolve(__dirname, '../../../tests/.auth/admin.json');
 
-if (!fs.existsSync(AUTH_STATE)) {
-  throw new Error(`Missing required auth storage state: ${AUTH_STATE}`);
-}
-
-if (!fs.existsSync(ADMIN_STATE)) {
-  throw new Error(`Missing required auth storage state: ${ADMIN_STATE}`);
-}
-
 test.describe('A11y — Authenticated user pages', () => {
+  test.skip(!fs.existsSync(AUTH_STATE), `Missing required auth storage state: ${AUTH_STATE}`);
+
   test.use({
     storageState: AUTH_STATE,
   });
@@ -43,6 +37,8 @@ test.describe('A11y — Authenticated user pages', () => {
 });
 
 test.describe('A11y — Admin pages', () => {
+  test.skip(!fs.existsSync(ADMIN_STATE), `Missing required auth storage state: ${ADMIN_STATE}`);
+
   test.use({
     storageState: ADMIN_STATE,
   });

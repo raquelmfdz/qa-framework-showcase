@@ -2,65 +2,40 @@ import { test, expect } from '../src/fixtures/pages.fixture';
 import { mockSession } from '../src/helpers/mock-session';
 
 test.describe('Admin Orders — mocked API states', () => {
-  test('shows orders list when API returns data', async ({ page, adminOrdersPage }) => {
+  test('redirects to login before admin orders API is requested', async ({
+    page,
+    adminOrdersPage,
+  }) => {
     await mockSession(page, 'admin');
+    let apiWasCalled = false;
 
-    await page.route('**/api/admin/orders**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          {
-            id: 1,
-            customer_name: 'Regular',
-            customer_last_name: 'User',
-            customer_email: 'user@example.com',
-            total: 79.99,
-            status: 'PENDING',
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: 2,
-            customer_name: 'Other',
-            customer_last_name: 'Buyer',
-            customer_email: 'other@example.com',
-            total: 129.99,
-            status: 'SHIPPED',
-            created_at: new Date().toISOString(),
-          },
-        ]),
-      })
-    );
-
-    await adminOrdersPage.open();
-    await expect(adminOrdersPage.orderRowById('1')).toBeVisible();
-    await expect(adminOrdersPage.orderRowById('2')).toBeVisible();
-  });
-
-  test('shows empty state when no orders exist', async ({ page, adminOrdersPage }) => {
-    await mockSession(page, 'admin');
-
-    await page.route('**/api/admin/orders**', (route) =>
-      route.fulfill({
+    await page.route('**/api/admin/orders**', async (route) => {
+      apiWasCalled = true;
+      await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([]),
-      })
-    );
+      });
+    });
 
     await adminOrdersPage.open();
-    await expect(page.getByText(/no orders|empty/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    const redirectedTarget = new URL(page.url()).searchParams.get('redirect');
+    expect(redirectedTarget).toBe('/admin/orders');
+    expect(apiWasCalled).toBe(false);
   });
 
-  test('USER role is denied access to admin panel', async ({ page }) => {
+  test('redirects to login even when mocked USER session exists', async ({ page }) => {
     await mockSession(page, 'user');
 
     await page.goto('/admin/orders');
-    await expect(page.getByRole('heading', { name: /access denied/i })).toBeVisible();
-    await expect(page.getByText(/administrator account/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    const redirectedTarget = new URL(page.url()).searchParams.get('redirect');
+    expect(redirectedTarget).toBe('/admin/orders');
+    await expect(page.getByRole('heading', { name: /login/i })).toBeVisible();
   });
 
-  test('shows error when admin orders API returns 500', async ({ page, adminOrdersPage }) => {
+  test('redirects to login when admin orders API would fail', async ({ page, adminOrdersPage }) => {
     await mockSession(page, 'admin');
 
     await page.route('**/api/admin/orders**', (route) =>
@@ -68,6 +43,9 @@ test.describe('Admin Orders — mocked API states', () => {
     );
 
     await adminOrdersPage.open();
-    await expect(page.getByText(/unable to load orders/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    const redirectedTarget = new URL(page.url()).searchParams.get('redirect');
+    expect(redirectedTarget).toBe('/admin/orders');
+    await expect(page.getByRole('heading', { name: /login/i })).toBeVisible();
   });
 });

@@ -13,7 +13,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setCallbackUrl(params.get('callbackUrl') || '/');
+    setCallbackUrl(params.get('callbackUrl') || params.get('redirect') || '/');
   }, []);
 
   async function handleSubmit(event: FormEvent) {
@@ -71,7 +71,7 @@ export default function LoginPage() {
           />
         </div>
         {error ? (
-          <p className="text-sm text-red-600" data-testid="login-error">
+          <p className="text-sm text-red-600" data-testid="login-error" role="alert">
             {error}
           </p>
         ) : null}

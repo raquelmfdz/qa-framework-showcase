@@ -178,7 +178,7 @@ npm run report:e2e
 
 - E2E uses a setup project in `tests/e2e/setup/auth.setup.ts`.
 - Setup logs in through NextAuth credentials flow and writes `tests/.auth/admin.json` and `tests/.auth/user.json`.
-- E2E projects (`as-user`, `as-admin`, `as-guest`) consume storage states rather than repeatedly using login UI.
+- E2E projects (`as-user`, `as-admin`, `as-fresh-login`) consume storage states where appropriate rather than repeatedly using login UI.
 - Integration tests do not require real auth; they mock `/api/auth/session` via `mockSession()`.
 
 ## Database Choice and Test Isolation
@@ -223,4 +223,5 @@ npm run report:e2e
 - Auth setup uses pre-generated storage state for most E2E tests to reduce runtime and flakiness; trade-off is reduced direct login-page coverage per test.
 - Integration relies on route mocking for speed and determinism; trade-off is less confidence in full backend wiring compared to E2E.
 - SQLite local DB keeps the showcase portable and simple; trade-off is less production parity if target systems use different DB engines.
+- Some tests seed or clean orders through a direct SQLite connection while the app server is running; WAL + busy timeout reduce lock contention, but this can still be less stable than seeding through API-only flows under heavy parallelism.
 - Unit coverage is focused on shared rule helpers rather than every UI function; trade-off is deliberate to keep QA effort concentrated on risk-heavy logic.

@@ -1,5 +1,6 @@
 import { Page } from '@playwright/test';
 import { SEED_USERS } from '../data/users';
+import { resolveUserIdByEmail } from './orders-api';
 
 type Role = 'user' | 'admin' | 'guest';
 
@@ -20,9 +21,10 @@ export async function mockSession(page: Page, role: Role = 'user'): Promise<void
   }
 
   const seedUser = SEED_USERS[role];
+  const userId = resolveUserIdByEmail(seedUser.email);
   const session = {
     user: {
-      id: role === 'admin' ? '1' : '2',
+      id: String(userId),
       email: seedUser.email,
       name: seedUser.name,
       role: seedUser.role,

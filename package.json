@@ -28,9 +28,9 @@
     "test:a11y": "dotenv -e .env -- npm run test:a11y --workspace=non-functional-tests/a11y",
     "k6:smoke": "k6 run non-functional-tests/load/scenarios/smoke.js",
     "k6:ramp": "k6 run non-functional-tests/load/scenarios/baseline-ramp.js",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint .",
     "format": "prettier --write .",
-    "fix": "eslint . --ext .ts,.tsx --fix && prettier --write .",
+    "fix": "eslint . --fix && prettier --write .",
     "prepare": "husky"
   },
   "devDependencies": {

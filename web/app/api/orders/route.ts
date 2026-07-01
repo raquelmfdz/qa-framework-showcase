@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../../lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../lib/auth';
+import { calculateCartTotal, isValidZipCode } from '../../../lib/business-rules';
 
 const PAGE_SIZE = 6;
 
@@ -57,6 +58,10 @@ export async function POST(request: NextRequest) {
     return new NextResponse('All fields are required', { status: 400 });
   }
 
+  if (!isValidZipCode(customerZipCode)) {
+    return new NextResponse('Invalid ZIP code', { status: 400 });
+  }
+
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ? Number(session.user.id) : null;
   const guestToken = request.cookies.get('guest_token')?.value || '';
@@ -77,7 +82,9 @@ export async function POST(request: NextRequest) {
     return new NextResponse('Cart is empty', { status: 400 });
   }
 
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = calculateCartTotal(
+    cartItems.map((item) => ({ price: item.price, quantity: item.quantity }))
+  );
 
   let orderId: number | bigint;
 

@@ -149,8 +149,7 @@ describe('calculateCartTotal', () => {
   });
 
   it('rounds a result with more than 2 decimal places', () => {
-    // 1.005 in IEEE 754 actually rounds to 1.00, not 1.01 — toFixed(2) applied
-    // after the reduce ensures we always return a 2dp value.
+    // toFixed(2) is applied after summing so API totals stay normalized to 2 decimals.
     expect(calculateCartTotal([{ price: 10.005, quantity: 1 }])).toBe(10.01);
   });
 });

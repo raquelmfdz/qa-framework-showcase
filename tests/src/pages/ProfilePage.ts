@@ -28,4 +28,17 @@ export class ProfilePage extends BasePage {
     await this.nameInput.fill(name);
     await this.saveButton.click();
   }
+
+  async updateProfile(details: {
+    name: string;
+    lastName: string;
+    zipCode: string;
+    address: string;
+  }): Promise<void> {
+    await this.nameInput.fill(details.name);
+    await this.lastNameInput.fill(details.lastName);
+    await this.zipCodeInput.fill(details.zipCode);
+    await this.addressInput.fill(details.address);
+    await this.saveButton.click();
+  }
 }

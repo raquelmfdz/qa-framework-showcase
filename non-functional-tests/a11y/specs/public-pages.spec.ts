@@ -29,7 +29,7 @@ test.describe('A11y — Public pages', () => {
   test('cart page has no critical or serious violations', async ({ page }) => {
     await page.goto('/cart');
     await expect(page).toHaveURL('/cart');
-    await expect(page.getByText('Cart', { exact: false })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /shopping cart/i })).toBeVisible();
     await checkA11y(page);
   });
 

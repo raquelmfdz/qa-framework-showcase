@@ -1,5 +1,9 @@
 import { test, expect, request as playwrightRequest } from '@playwright/test';
-import { createOrdersInDbForUser, deleteOrdersFromDb } from '../src/helpers/orders-api';
+import {
+  createOrdersInDbForUser,
+  deleteOrdersFromDb,
+  resolveProductIdByName,
+} from '../src/helpers/orders-api';
 import { SEED_USERS } from '../src/data/users';
 import { VALID_CHECKOUT_DETAILS, SEED_PRODUCTS } from '../src/data/products';
 import { loginViaApi } from '../src/helpers/auth-api';
@@ -66,11 +70,18 @@ test.describe('API Contracts and Guardrails', () => {
 
   test('GET /api/orders/:id denies cross-user access with 403', async ({ request, baseURL }) => {
     const createdOrderIds: number[] = [];
+    const backpackId = resolveProductIdByName(SEED_PRODUCTS.mountainBackpack.name);
 
     try {
       const seeded = createOrdersInDbForUser(SEED_USERS.admin.email, [
         {
-          lines: [{ productId: 1, quantity: 1, unitPrice: SEED_PRODUCTS.mountainBackpack.price }],
+          lines: [
+            {
+              productId: backpackId,
+              quantity: 1,
+              unitPrice: SEED_PRODUCTS.mountainBackpack.price,
+            },
+          ],
           customerName: VALID_CHECKOUT_DETAILS.firstName,
           customerLastName: VALID_CHECKOUT_DETAILS.lastName,
           customerEmail: VALID_CHECKOUT_DETAILS.email,

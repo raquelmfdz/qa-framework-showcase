@@ -87,7 +87,9 @@ export default function () {
 
   group('Auth guardrails', () => {
     // Verify protected endpoints enforce auth without throwing 5xx
-    const adminRes = http.get(`${BASE_URL}/api/admin/orders`);
+    const adminRes = http.get(`${BASE_URL}/api/admin/orders`, {
+      responseCallback: http.expectedStatuses(200, 401),
+    });
     totalRequests.add(1);
 
     const adminOk = check(adminRes, {

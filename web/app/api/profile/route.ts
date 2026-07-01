@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../lib/auth';
 import { db } from '../../../lib/db';
+import { isValidZipCode } from '../../../lib/business-rules';
 
 interface UserProfile {
   email: string;
@@ -39,6 +40,10 @@ export async function PATCH(request: NextRequest) {
   const lastName = String(body.lastName ?? '').trim();
   const zipCode = String(body.zipCode ?? '').trim();
   const address = String(body.address ?? '').trim();
+
+  if (zipCode && !isValidZipCode(zipCode)) {
+    return new NextResponse('Invalid ZIP code', { status: 400 });
+  }
 
   db.prepare(
     'UPDATE users SET name = ?, last_name = ?, zip_code = ?, address = ? WHERE id = ?'

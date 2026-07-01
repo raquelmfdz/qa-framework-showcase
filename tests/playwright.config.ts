@@ -12,7 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
  *  - setup      : runs e2e/setup/auth.setup.ts once, generates .auth/admin.json & .auth/user.json
  *  - as-user    : all tests under e2e/ except setup/, purchase/, and admin/, with USER session
  *  - as-admin   : tests under e2e/admin/, with admin session
- *  - as-guest   : tests under e2e/purchase/ (no session needed)
+ *  - as-fresh-login : tests under e2e/purchase/ (no preloaded session)
  *
  * webServer behaviour:
  *  - CI  (process.env.CI=true)  : Playwright boots Next.js and waits for it.
@@ -69,10 +69,9 @@ export default defineConfig({
       },
     },
 
-    // ── 4. Guest / unauthenticated tests (login page, public catalog) ────────
+    // ── 4. Fresh browser tests (no preloaded auth storage state) ─────────────
     {
-      name: 'as-guest',
-      dependencies: ['setup'],
+      name: 'as-fresh-login',
       testMatch: /e2e\/purchase\//,
       use: {
         ...devices['Desktop Chrome'],

@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 import path from 'path';
 import { baseConfig, BASE_URL } from './playwright.base.config';
 
@@ -12,7 +12,9 @@ export default defineConfig({
   testDir: './api',
   reporter: [['html', { outputFolder: 'playwright-report/api', open: 'never' }], ['list']],
   webServer: {
-    command: process.env.CI ? 'npm run start --workspace=web' : 'npm run dev --workspace=web',
+    command: process.env.CI
+      ? 'npm run seed --workspace=web && npm run start --workspace=web'
+      : 'npm run dev --workspace=web',
     cwd: path.resolve(__dirname, '..'),
     url: BASE_URL,
     env: {
@@ -28,7 +30,7 @@ export default defineConfig({
   projects: [
     {
       name: 'api-contracts',
-      use: { ...devices['Desktop Chrome'] },
+      use: {},
     },
   ],
 });

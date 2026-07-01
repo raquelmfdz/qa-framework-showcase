@@ -2,6 +2,7 @@ import { test, expect } from '../../src/fixtures/pages.fixture';
 import { SEED_USERS } from '../../src/data/users';
 import { SEED_PRODUCTS, VALID_CHECKOUT_DETAILS } from '../../src/data/products';
 import { clearCart } from '../../src/helpers/api-data';
+import { resolveProductIdByName } from '../../src/helpers/orders-api';
 
 /**
  * Happy Path E2E Test Suite
@@ -15,7 +16,7 @@ import { clearCart } from '../../src/helpers/api-data';
  * 6. Successfully places an order
  * 7. Confirms order success and order appears in order history
  *
- * Runs under 'as-guest' project to start fresh (no pre-existing session).
+ * Runs under 'as-fresh-login' project to start fresh (no pre-existing session).
  */
 test.describe('E2E Purchase Happy Path', () => {
   test.beforeEach(async ({ request, baseURL }) => {
@@ -41,9 +42,18 @@ test.describe('E2E Purchase Happy Path', () => {
 
     // Step 3: add items using explicit product testids for stability.
     const productsToAdd = [
-      { id: 1, product: SEED_PRODUCTS.mountainBackpack },
-      { id: 2, product: SEED_PRODUCTS.campingLantern },
-      { id: 3, product: SEED_PRODUCTS.wirelessHeadphones },
+      {
+        id: resolveProductIdByName(SEED_PRODUCTS.mountainBackpack.name),
+        product: SEED_PRODUCTS.mountainBackpack,
+      },
+      {
+        id: resolveProductIdByName(SEED_PRODUCTS.campingLantern.name),
+        product: SEED_PRODUCTS.campingLantern,
+      },
+      {
+        id: resolveProductIdByName(SEED_PRODUCTS.wirelessHeadphones.name),
+        product: SEED_PRODUCTS.wirelessHeadphones,
+      },
     ];
 
     for (const entry of productsToAdd) {

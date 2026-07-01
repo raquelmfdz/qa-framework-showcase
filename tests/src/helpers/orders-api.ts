@@ -23,6 +23,40 @@ export type CreatedOrder = {
   expectedTotal: number;
 };
 
+function openTestDb(): Database.Database {
+  const dbFile = path.resolve(process.cwd(), '../web/dev.db');
+  const db = new Database(dbFile);
+  db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 5000');
+  return db;
+}
+
+export function resolveUserIdByEmail(email: string): number {
+  const db = openTestDb();
+  try {
+    const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email) as
+      | { id: number }
+      | undefined;
+    expect(!!user, `User not found while resolving ID for: ${email}`).toBe(true);
+    return user!.id;
+  } finally {
+    db.close();
+  }
+}
+
+export function resolveProductIdByName(productName: string): number {
+  const db = openTestDb();
+  try {
+    const product = db.prepare('SELECT id FROM products WHERE name = ?').get(productName) as
+      | { id: number }
+      | undefined;
+    expect(!!product, `Product not found while resolving ID for: ${productName}`).toBe(true);
+    return product!.id;
+  } finally {
+    db.close();
+  }
+}
+
 export async function createOrdersViaApi(
   request: APIRequestContext,
   baseURL: string,
@@ -65,10 +99,7 @@ export async function createOrdersViaApi(
 export function deleteOrdersFromDb(orderIds: number[]): void {
   if (orderIds.length === 0) return;
 
-  const dbFile = path.resolve(process.cwd(), '../web/dev.db');
-  const db = new Database(dbFile);
-  db.pragma('journal_mode = WAL');
-  db.pragma('busy_timeout = 5000');
+  const db = openTestDb();
 
   try {
     const deleteItems = db.prepare('DELETE FROM order_items WHERE order_id = ?');
@@ -86,10 +117,7 @@ export function deleteOrdersFromDb(orderIds: number[]): void {
 export function createOrdersInDbForUser(userEmail: string, seeds: ApiOrderSeed[]): CreatedOrder[] {
   if (seeds.length === 0) return [];
 
-  const dbFile = path.resolve(process.cwd(), '../web/dev.db');
-  const db = new Database(dbFile);
-  db.pragma('journal_mode = WAL');
-  db.pragma('busy_timeout = 5000');
+  const db = openTestDb();
 
   try {
     const user = db.prepare('SELECT id FROM users WHERE email = ?').get(userEmail) as

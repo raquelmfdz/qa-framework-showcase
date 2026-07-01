@@ -8,6 +8,8 @@ test-results/
 tests/.auth/
 axe-reports/
 *.db
+*.db-shm
+*.db-wal
 *.Identifier
 
 # OS files
