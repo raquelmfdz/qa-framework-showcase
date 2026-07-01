@@ -121,23 +121,50 @@ function parseK6Summary(report) {
     return [];
   }
 
-  function walkGroup(group) {
+  function collectChecks(group) {
+    const checks = [];
+
     for (const check of asItems(group?.checks)) {
-      const fails = Number(check.fails ?? 0);
-      rows.push({
-        testCase: `check: ${String(check.path || check.name || 'unknown').replace(/\|/g, '\\|')}`,
-        status: fails > 0 ? 'failed' : 'passed',
-        duration: fmtMs(runMs),
-        retries: 0,
-      });
+      checks.push(check);
     }
 
     for (const child of asItems(group?.groups)) {
-      walkGroup(child);
+      checks.push(...collectChecks(child));
     }
+
+    return checks;
   }
 
-  walkGroup(report?.root_group ?? {});
+  function collectThresholdRows(metrics) {
+    const thresholdRows = [];
+
+    for (const [metricName, metric] of Object.entries(metrics ?? {})) {
+      for (const [thresholdName, threshold] of Object.entries(metric?.thresholds ?? {})) {
+        thresholdRows.push({
+          testCase: `threshold: ${String(metricName).replace(/\|/g, '\\|')} > ${String(thresholdName).replace(/\|/g, '\\|')}`,
+          status: threshold?.ok === false ? 'failed' : 'passed',
+          duration: fmtMs(runMs),
+          retries: 0,
+        });
+      }
+    }
+
+    return thresholdRows;
+  }
+
+  const checks = collectChecks(report?.root_group ?? {});
+  const hasFailedCheck = checks.some((check) => Number(check?.fails ?? 0) > 0);
+  const thresholdRows = collectThresholdRows(report?.metrics ?? {});
+  const hasFailedThreshold = thresholdRows.some((row) => row.status === 'failed');
+
+  rows.push({
+    testCase: 'Load smoke test',
+    status: hasFailedCheck || hasFailedThreshold ? 'failed' : 'passed',
+    duration: fmtMs(runMs),
+    retries: 0,
+  });
+
+  rows.push(...thresholdRows);
 
   return rows;
 }

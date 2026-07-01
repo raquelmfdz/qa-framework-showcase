@@ -250,8 +250,17 @@ jobs:
           name: e2e-test-results
           path: |
             tests/playwright-report/e2e/
-            tests/.auth/
             tests/test-results/
+          retention-days: 14
+
+      - name: Upload E2E auth state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-auth-state
+          path: tests/.auth/*.json
+          include-hidden-files: true
+          if-no-files-found: warn
           retention-days: 14
 
       - name: Upload E2E summary data
@@ -290,8 +299,8 @@ jobs:
       - name: Download auth state from e2e setup
         uses: actions/download-artifact@v4
         with:
-          name: e2e-test-results
-          path: .
+          name: e2e-auth-state
+          path: tests/.auth
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps

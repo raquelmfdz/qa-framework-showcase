@@ -6,7 +6,7 @@
       "orders status 200": {
         "name": "orders status 200",
         "path": "::orders status 200",
-        "fails": 1
+        "fails": 0
       }
     },
     "groups": {
@@ -19,6 +19,18 @@
           }
         },
         "groups": {}
+      }
+    }
+  },
+  "metrics": {
+    "http_req_duration": {
+      "thresholds": {
+        "p(95)<600": { "ok": true }
+      }
+    },
+    "error_rate": {
+      "thresholds": {
+        "rate<0.02": { "ok": true }
       }
     }
   }
