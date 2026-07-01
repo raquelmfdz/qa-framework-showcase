@@ -24,7 +24,7 @@ export default function CartPage() {
       if (!response.ok) throw new Error('Unable to load cart');
       const data = await response.json();
       setItems(data);
-    } catch (_err) {
+    } catch {
       setError('Unable to load your cart. Please try again.');
     } finally {
       setLoading(false);
@@ -88,6 +88,7 @@ export default function CartPage() {
               <li
                 key={item.id}
                 data-testid={`cart-item-${item.product_id}`}
+                data-legacy-testid="cart-line-item"
                 className="glass-panel rounded-[24px] border border-orange-500/10 p-4"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

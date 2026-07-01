@@ -15,8 +15,8 @@ export default function Navbar() {
   useEffect(() => {
     async function fetchCount() {
       const response = await fetch('/api/cart');
-      const items = await response.json();
-      setCount(items.reduce((sum: number, item: any) => sum + item.quantity, 0));
+      const items = (await response.json()) as Array<{ quantity: number }>;
+      setCount(items.reduce((sum, item) => sum + item.quantity, 0));
     }
     fetchCount();
     window.addEventListener('cartUpdated', fetchCount);
@@ -76,7 +76,7 @@ export default function Navbar() {
               aria-label={`Cart, ${count} items`}
               className="rounded-full border border-orange-500/20 bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-100 transition hover:bg-orange-500/20"
             >
-              Cart ({count})
+              <span data-testid="cart-item-count">Cart ({count})</span>
             </Link>
           </li>
 
@@ -92,7 +92,9 @@ export default function Navbar() {
                   aria-haspopup="true"
                   aria-expanded={menuOpen}
                 >
-                  {session.user.name ?? session.user.email}
+                  <span data-testid="navbar-user-name">
+                    {session.user.name ?? session.user.email}
+                  </span>
                 </button>
 
                 {menuOpen && (

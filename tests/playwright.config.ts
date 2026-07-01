@@ -28,6 +28,11 @@ export default defineConfig({
     command: process.env.CI ? 'npm run start --workspace=web' : 'npm run dev --workspace=web',
     cwd: path.resolve(__dirname, '..'),
     url: BASE_URL,
+    env: {
+      ...process.env,
+      NEXTAUTH_URL: BASE_URL,
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'playwright-local-secret',
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: 'ignore',
@@ -38,7 +43,7 @@ export default defineConfig({
     // ── 1. Auth setup (runs first, no storageState dependency) ──────────────
     {
       name: 'setup',
-      testMatch: /auth\.setup\.ts/,
+      testMatch: /auth\/auth\.setup\.ts/,
     },
 
     // ── 2. Tests as an authenticated regular USER ────────────────────────────
@@ -66,7 +71,9 @@ export default defineConfig({
     // ── 4. Guest / unauthenticated tests (login page, public catalog) ────────
     {
       name: 'as-guest',
+      dependencies: ['setup'],
       testMatch: [/e2e\/auth\//, /e2e\/catalog\//],
+      testIgnore: /auth\.setup\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         // No storageState — browser starts with no session cookie

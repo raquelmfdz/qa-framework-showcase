@@ -15,7 +15,31 @@ export async function clearCart(request: APIRequestContext, baseURL: string): Pr
   const response = await request.get(`${baseURL}/api/cart`);
   if (!response.ok()) return;
 
-  const { items } = (await response.json()) as { items: { productId: number }[] };
+  const payload = (await response.json()) as unknown;
+  if (!Array.isArray(payload) || payload.length === 0) return;
+
+  const items = payload
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+
+      // API returns product_id from SQL alias; keep camelCase fallback for resilience.
+      const productId = Number((item as { product_id?: unknown; productId?: unknown }).product_id);
+      const fallbackProductId = Number(
+        (item as { product_id?: unknown; productId?: unknown }).productId
+      );
+
+      const resolvedProductId = Number.isFinite(productId)
+        ? productId
+        : Number.isFinite(fallbackProductId)
+          ? fallbackProductId
+          : null;
+
+      return resolvedProductId ? { productId: resolvedProductId } : null;
+    })
+    .filter((item): item is { productId: number } => item !== null);
+
+  if (items.length === 0) return;
+
   await Promise.all(
     items.map((item) =>
       request.delete(`${baseURL}/api/cart`, { data: { productId: item.productId } })

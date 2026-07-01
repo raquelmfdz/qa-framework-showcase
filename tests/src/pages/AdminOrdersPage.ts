@@ -4,14 +4,10 @@ import { BasePage } from './BasePage';
 /** Maps to web/app/admin/orders/page.tsx + web/app/api/admin/orders/[id]/route.ts */
 export class AdminOrdersPage extends BasePage {
   readonly orderRows: Locator;
-  readonly statusFilter: Locator;
-  readonly emptyState: Locator;
 
   constructor(page: Page) {
     super(page);
     this.orderRows = page.getByTestId('admin-order-row');
-    this.statusFilter = page.getByLabel(/status/i);
-    this.emptyState = page.getByText(/no orders/i);
   }
 
   async open(): Promise<void> {

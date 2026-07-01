@@ -8,7 +8,9 @@ export class OrderSuccessPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.confirmationHeading = page.getByRole('heading', { name: /order confirmed|thank you/i });
+    this.confirmationHeading = page.getByRole('heading', {
+      name: /order placed successfully|order confirmed|thank you/i,
+    });
     this.orderIdText = page.getByTestId('order-id');
   }
 

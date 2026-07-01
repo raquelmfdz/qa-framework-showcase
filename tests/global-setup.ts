@@ -18,7 +18,7 @@ import fs from 'fs';
  * recreate it from scratch. This mirrors `web`'s own `db:reset` script.
  */
 async function globalSetup(_config: FullConfig) {
-  const dbFile = process.env.DATABASE_FILE ?? '../web/dev.db';
+  const dbFile = process.env.DATABASE_FILE || '../web/dev.db';
   const resolvedPath = path.resolve(__dirname, dbFile);
 
   if (fs.existsSync(resolvedPath)) {

@@ -1,6 +1,6 @@
 import { test as setup } from '@playwright/test';
-import { loginViaApi } from '../src/helpers/auth-api';
-import { SEED_USERS } from '../src/data/users';
+import { loginViaApi } from '../../src/helpers/auth-api';
+import { SEED_USERS } from '../../src/data/users';
 
 /**
  * Runs as its own Playwright project (see playwright.config.ts) with

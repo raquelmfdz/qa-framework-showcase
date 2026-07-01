@@ -9,12 +9,8 @@ on:
 env:
   BASE_URL: ${{ vars.BASE_URL }}
   DATABASE_FILE: ${{ vars.DATABASE_FILE }}
-  ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-  ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-  USER_EMAIL: ${{ secrets.USER_EMAIL }}
-  USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
-  # Mandatary encryption key required by NextAuth.js to boot up in production mode inside CI
-  NEXTAUTH_SECRET: "ci_testing_secret_key_123456789_abcdef"
+  # Required by NextAuth in CI/prod mode for session encryption/decryption.
+  NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
   NEXT_TELEMETRY_DISABLED: 1
   WORKSPACE_CACHE_KEY: monorepo-state-${{ github.sha }}
 

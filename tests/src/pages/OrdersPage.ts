@@ -17,6 +17,6 @@ export class OrdersPage extends BasePage {
   }
 
   orderRowById(orderId: string): Locator {
-    return this.orderRows.filter({ hasText: orderId });
+    return this.orderRows.filter({ hasText: new RegExp(`Order\\s+#${orderId}\\b`) });
   }
 }

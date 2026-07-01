@@ -90,7 +90,11 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody>
               {orders.map((order, i) => (
-                <tr key={order.id} className={i % 2 === 0 ? 'bg-slate-900/30' : 'bg-slate-900/10'}>
+                <tr
+                  key={order.id}
+                  data-testid="admin-order-row"
+                  className={i % 2 === 0 ? 'bg-slate-900/30' : 'bg-slate-900/10'}
+                >
                   <td className="px-4 py-3 text-orange-100">#{order.id}</td>
                   <td className="px-4 py-3 text-slate-300">
                     {order.customer_name} {order.customer_last_name}

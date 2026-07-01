@@ -9,12 +9,11 @@ import { BasePage } from './BasePage';
  */
 export class HomePage extends BasePage {
   readonly productCards: Locator;
-  readonly searchInput: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.productCards = page.getByTestId('product-card');
-    this.searchInput = page.getByPlaceholder(/search/i);
+    // Match product-card-{id} using CSS selector with attribute prefix match
+    this.productCards = page.locator('[data-testid^="product-card-"]');
   }
 
   async open(): Promise<void> {
@@ -26,11 +25,14 @@ export class HomePage extends BasePage {
   }
 
   async addToCartByName(name: string): Promise<void> {
+    // Find the product card by name, then find the add-to-cart button within it
     const card = this.productCardByName(name);
-    await card.getByRole('button', { name: /add to cart/i }).click();
-  }
-
-  async getVisibleProductCount(): Promise<number> {
-    return this.productCards.count();
+    // Wait for card to be visible first
+    await card.waitFor({ state: 'visible' });
+    // Use data-testid to find the button if it exists, otherwise use role
+    const button = card
+      .locator('[data-testid*="add-to-cart"]')
+      .or(card.getByRole('button', { name: /add to cart/i }));
+    await button.click();
   }
 }

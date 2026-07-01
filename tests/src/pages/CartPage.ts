@@ -15,7 +15,8 @@ export class CartPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.lineItems = page.getByTestId('cart-line-item');
+    // Match cart-item-{productId} using CSS selector with attribute prefix match
+    this.lineItems = page.locator('[data-testid^="cart-item-"]');
     this.checkoutButton = page.getByRole('link', { name: /checkout/i });
     this.emptyCartMessage = page.getByText(/your cart is empty/i);
     this.totalAmount = page.getByTestId('cart-total');

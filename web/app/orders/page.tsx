@@ -56,7 +56,11 @@ export default function OrdersPage() {
       ) : (
         <div className="grid gap-4" data-testid="orders-table">
           {orders.map((order) => (
-            <div key={order.id} className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+            <div
+              key={order.id}
+              data-testid="order-row"
+              className="rounded-xl border border-slate-700 bg-slate-900/60 p-4"
+            >
               <p className="font-semibold text-orange-100">Order #{order.id}</p>
               <p className="text-sm text-slate-400">
                 {new Date(order.created_at.replace(' ', 'T')).toLocaleString()}

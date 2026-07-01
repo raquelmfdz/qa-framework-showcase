@@ -9,18 +9,12 @@ import { Page, Locator } from '@playwright/test';
 export class Navbar {
   readonly cartLink: Locator;
   readonly cartItemCount: Locator;
-  readonly profileLink: Locator;
   readonly logoutButton: Locator;
-  readonly loginLink: Locator;
-  readonly userDisplayName: Locator;
 
   constructor(private readonly page: Page) {
     this.cartLink = page.getByRole('link', { name: /cart/i });
     this.cartItemCount = page.getByTestId('cart-item-count');
-    this.profileLink = page.getByRole('link', { name: /profile/i });
     this.logoutButton = page.getByRole('button', { name: /log out|sign out/i });
-    this.loginLink = page.getByRole('link', { name: /log in|sign in/i });
-    this.userDisplayName = page.getByTestId('navbar-user-name');
   }
 
   async logout(): Promise<void> {

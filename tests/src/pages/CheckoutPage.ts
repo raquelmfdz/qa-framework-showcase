@@ -17,11 +17,12 @@ export class CheckoutPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.firstNameInput = page.getByLabel(/first name|name/i);
-    this.lastNameInput = page.getByLabel(/last name/i);
-    this.emailInput = page.getByLabel(/email/i);
-    this.zipCodeInput = page.getByLabel(/zip code|postal code/i);
-    this.addressInput = page.getByLabel(/address/i);
+    // Use testid for more precise selection
+    this.firstNameInput = page.getByTestId('checkout-first-name');
+    this.lastNameInput = page.getByTestId('checkout-last-name');
+    this.emailInput = page.getByTestId('checkout-email');
+    this.zipCodeInput = page.getByTestId('checkout-zip-code');
+    this.addressInput = page.getByTestId('checkout-address');
     this.placeOrderButton = page.getByRole('button', { name: /place order|confirm order/i });
   }
 

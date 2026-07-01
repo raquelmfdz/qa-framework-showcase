@@ -51,7 +51,9 @@ export default function OrderSuccessPage({ params }: { params: { orderId: string
         <h1 className="text-3xl font-semibold text-slate-100">Order placed successfully</h1>
         <p className="mt-2 text-slate-300">
           Thank you for your purchase! Your order number is{' '}
-          <span className="font-bold text-orange-200">#{order.id}</span>
+          <span data-testid="order-id" className="font-bold text-orange-200">
+            #{order.id}
+          </span>
         </p>
       </div>
 
