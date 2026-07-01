@@ -1,0 +1,25 @@
+{
+  "state": { "testRunDurationMs": 30250 },
+  "root_group": {
+    "checks": {
+      "home status 200": { "name": "home status 200", "path": "::home status 200", "fails": 0 },
+      "orders status 200": {
+        "name": "orders status 200",
+        "path": "::orders status 200",
+        "fails": 1
+      }
+    },
+    "groups": {
+      "Catalog": {
+        "checks": {
+          "products returns array": {
+            "name": "products returns array",
+            "path": "::Catalog::products returns array",
+            "fails": 0
+          }
+        },
+        "groups": {}
+      }
+    }
+  }
+}

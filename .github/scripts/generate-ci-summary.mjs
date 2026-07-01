@@ -115,8 +115,14 @@ function parseK6Summary(report) {
   const rows = [];
   const runMs = report?.state?.testRunDurationMs;
 
+  function asItems(value) {
+    if (Array.isArray(value)) return value;
+    if (value && typeof value === 'object') return Object.values(value);
+    return [];
+  }
+
   function walkGroup(group) {
-    for (const check of group?.checks ?? []) {
+    for (const check of asItems(group?.checks)) {
       const fails = Number(check.fails ?? 0);
       rows.push({
         testCase: `check: ${String(check.path || check.name || 'unknown').replace(/\|/g, '\\|')}`,
@@ -126,7 +132,7 @@ function parseK6Summary(report) {
       });
     }
 
-    for (const child of group?.groups ?? []) {
+    for (const child of asItems(group?.groups)) {
       walkGroup(child);
     }
   }
