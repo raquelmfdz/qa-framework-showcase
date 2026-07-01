@@ -1,168 +1,142 @@
-# Test Framework
+# QA Test Framework
 
-Playwright + TypeScript test suite for the demo e-commerce app.
+Playwright + TypeScript QA suite for the demo e-commerce application, with unit tests in the app workspace to support test pyramid balance.
 
 ## Stack
 
-| Layer                | Tool                                                    |
-| -------------------- | ------------------------------------------------------- |
-| E2E & Integration    | [Playwright](https://playwright.dev/)                   |
-| Unit (lógica de app) | [Vitest](https://vitest.dev/) — vive en `web/`, no aquí |
-| Language             | TypeScript 5                                            |
-| Auth                 | NextAuth v4 (Credentials + JWT)                         |
-| DB                   | SQLite via better-sqlite3                               |
+| Layer                         | Tool                                                |
+| ----------------------------- | --------------------------------------------------- |
+| Unit (business rules)         | [Vitest](https://vitest.dev/) in `web/`             |
+| API contracts                 | [Playwright](https://playwright.dev/) request tests |
+| Integration (UI + mocked API) | [Playwright](https://playwright.dev/)               |
+| E2E (real backend)            | [Playwright](https://playwright.dev/)               |
+| Language                      | TypeScript 5                                        |
+| Auth                          | NextAuth v4 (Credentials + JWT session)             |
+| DB                            | SQLite (`better-sqlite3`)                           |
 
----
-
-## Quick start
+## Quick Start
 
 ```bash
-# From repo root — installs all workspaces
+# from repo root
 npm ci
 
-# Install Playwright browsers (run once)
+# install browser once
 cd tests && npx playwright install chromium --with-deps
 
-# Copy env file
+# back to root and configure env
+cd ..
 cp .env.example .env
 
-# Make sure the app is seeded (run from repo root)
+# seed DB
 npm run seed
 
-# Run tests
-npm run test:unit          # Vitest en web/ — lógica pura de la app, sin servidor
-npm run test:integration   # Playwright, mocked API
-npm run test:e2e           # Playwright, real backend
+# run all layers independently
+npm run test:unit
+npm run test:api
+npm run test:integration
+npm run test:e2e
 ```
 
-> **Local tip:** `test:e2e` and `test:integration` will reuse a running `npm run dev`
-> server if one is already on port 3000. If nothing is running, Playwright boots it
-> automatically. You don't need to start the server manually.
+Local tip: Playwright configs reuse an existing server on port 3000 when available; otherwise Playwright starts the app automatically.
 
----
+## Project Structure
 
-## Folder structure
-
+```text
+playwright-qa-framework-showcase/
+├── web/
+│   ├── app/
+│   │   └── api/
+│   ├── lib/
+│   │   ├── auth.ts
+│   │   ├── business-rules.ts         # shared pure validation/business helpers
+│   │   ├── db.ts
+│   │   └── hash.ts
+│   ├── scripts/seed.ts
+│   └── unit/
+│       └── business-logic.spec.ts    # Vitest unit tests
+│
+├── tests/
+│   ├── e2e/
+│   │   ├── setup/auth.setup.ts       # auth setup project
+│   │   ├── auth/
+│   │   ├── admin/
+│   │   ├── cart/
+│   │   ├── catalog/
+│   │   ├── checkout/
+│   │   ├── orders/
+│   │   └── profile/
+│   ├── integration/
+│   │   ├── admin-api-states.spec.ts
+│   │   ├── catalog-api-states.spec.ts
+│   │   ├── checkout-api-states.spec.ts
+│   │   └── orders-api-states.spec.ts
+│   ├── api/
+│   │   └── contracts.spec.ts
+│   ├── src/
+│   │   ├── fixtures/
+│   │   ├── helpers/
+│   │   ├── pages/
+│   │   └── data/
+│   ├── playwright.base.config.ts
+│   ├── playwright.config.ts
+│   ├── playwright.integration.config.ts
+│   ├── playwright.api.config.ts
+│   └── global-setup.ts
+└── package.json
 ```
-tests/
-├── e2e/                        # E2E specs (real DB, real auth)
-│   ├── auth/                   # Login, logout, redirects
-│   ├── catalog/                # Product grid (public, no auth)
-│   ├── cart/                   # Add/remove/update cart items
-│   ├── checkout/               # Full purchase flow
-│   ├── orders/                 # User order history
-│   ├── profile/                # Profile update
-│   ├── admin/                  # Admin order management
-│   └── auth.setup.ts           # Playwright setup project (generates .auth/*.json)
-│
-├── integration/                # UI tests with page.route() mocking
-│   ├── catalog/                # API error/empty states for product grid
-│   ├── checkout/               # API error states for order placement
-│   ├── orders/                 # API states for order history
-│   └── admin/                  # API states + access control for admin panel
-│
-├── unit/                       # Vitest unit tests for pure utilities
-│
-├── src/
-│   ├── pages/                  # Page Objects (one per app page/route)
-│   │   └── components/         # Component Objects (Navbar, etc.)
-│   ├── fixtures/               # Playwright fixture extensions (Page Objects injection)
-│   ├── helpers/                # auth-api.ts, mock-session.ts, api-data.ts
-│   ├── data/                   # Seed mirrors: users.ts, products.ts
-│   └── utils/                  # Pure utility functions (tested by Vitest)
-│
-├── playwright.config.ts        # E2E config (4 projects: setup/as-user/as-admin/as-guest)
-├── playwright.integration.config.ts
-├── playwright.base.config.ts   # Shared settings
-├── global-setup.ts             # Resets SQLite DB before every run
-└── .env.example                # Env var reference
-```
 
----
+## Commands
 
-## Authentication strategy
-
-E2E tests use a **setup project** (`auth.setup.ts`) that runs before the suite:
-
-1. Calls `/api/auth/csrf` to get a CSRF token (required by NextAuth v4).
-2. POSTs credentials to `/api/auth/callback/credentials`.
-3. Saves the resulting `next-auth.session-token` cookie to `.auth/user.json`
-   and `.auth/admin.json`.
-
-Test projects declare `dependencies: ['setup']` and load the appropriate
-`storageState`, so **no test ever touches the login UI** except the dedicated
-auth specs under `e2e/auth/`.
-
-Integration tests use `mockSession()` from `src/helpers/mock-session.ts`,
-which intercepts `/api/auth/session` via `page.route()` — no real auth needed.
-
-The `.auth/` folder is **git-ignored**. Tokens are regenerated on every run.
-
----
-
-## Database isolation
-
-`global-setup.ts` deletes `web/dev.db` and re-runs `npm run seed` before
-each full test run. This means:
-
-- Every run starts with exactly the 12 seeded products and 2 seeded users.
-- No leftover orders/cart items from previous runs.
-
-Within a run, tests that need a clean cart call `clearCart()` from
-`src/helpers/api-data.ts` in `beforeEach`.
-
----
-
-## Tagging and filtering
-
-Tests tagged `@smoke` are the minimal set covering critical happy paths.
-Run them with:
+From repo root:
 
 ```bash
-npm run test:e2e -- --grep @smoke
+npm run dev
+npm run build
+npm run start
+npm run seed
+
+npm run test:unit
+npm run test:api
+npm run test:integration
+npm run test:e2e
+npm run test:a11y
 ```
 
----
+From `tests/` workspace:
 
-## Adding a new E2E test
+```bash
+npm run test:api
+npm run test:integration
+npm run test:e2e
 
-1. Create (or reuse) a Page Object in `src/pages/`.
-2. Add the spec under the correct `e2e/<feature>/` folder.
-3. Import `{ test, expect }` from `../../src/fixtures/pages.fixture`.
-4. If the test needs auth, confirm it's under a folder matched by the
-   right project in `playwright.config.ts` (`as-user`, `as-admin`, `as-guest`).
-5. Use `@smoke` in the test name if it covers a critical happy path.
+npm run report:api
+npm run report:integration
+npm run report:e2e
+```
 
-## Adding a new Integration test
+## Auth Setup and Test Authentication
 
-1. Add the spec under `integration/<feature>/`.
-2. Call `mockSession(page, 'user' | 'admin' | 'guest')` **before** `page.goto()`.
-3. Use `page.route('**/api/...')` to control API responses.
-4. No DB state, no `beforeEach` cleanup needed — tests are self-contained.
+- E2E uses a setup project in `tests/e2e/setup/auth.setup.ts`.
+- Setup logs in through NextAuth credentials flow and writes `tests/.auth/admin.json` and `tests/.auth/user.json`.
+- E2E projects (`as-user`, `as-admin`, `as-guest`) consume storage states rather than repeatedly using login UI.
+- Integration tests do not require real auth; they mock `/api/auth/session` via `mockSession()`.
 
----
+## Database Choice and Test Isolation
 
-## Selectors convention
+- Database engine is local SQLite (`better-sqlite3`) with file `web/dev.db`.
+- `tests/global-setup.ts` resets and reseeds DB before E2E runs for deterministic state.
+- Seed script creates baseline catalog and two deterministic users (admin + regular user).
+- API/integration tests remain isolated by mocking responses or using validation-only calls.
 
-All Page Objects use, in order of preference:
+## Why Unit Tests In A QA Showcase
 
-1. `getByRole()` — semantic, accessible, most robust.
-2. `getByLabel()` — for form inputs with proper `<label>` wiring.
-3. `getByTestId()` — for elements without good semantic attributes.
-   Add `data-testid="..."` to the component when needed.
-4. `getByText()` — only for assertions, not for clicks/interactions.
+- Unit tests are included for shared business rules (`web/lib/business-rules.ts`) because these rules are reused by API routes and failures here cascade into higher layers.
+- They provide fast, deterministic feedback on validation and normalization logic before running browser-heavy suites.
+- This demonstrates shift-left QA collaboration without changing ownership of full product unit testing.
 
-Avoid CSS class selectors and XPath. Tailwind class names change; roles don't.
+## Known Trade-offs
 
----
-
-## CI/CD
-
-The GitHub Actions workflow (`.github/workflows/qa.yml`) runs three jobs:
-
-- **unit** — always, on every push/PR, no server.
-- **integration** — always, parallel to unit.
-- **e2e** — after unit passes; boots the Next.js production build.
-
-Reports are uploaded as artifacts and retained for 14 days.
-Traces and screenshots on failure are retained for 7 days.
+- Auth setup uses pre-generated storage state for most E2E tests to reduce runtime and flakiness; trade-off is reduced direct login-page coverage per test.
+- Integration relies on route mocking for speed and determinism; trade-off is less confidence in full backend wiring compared to E2E.
+- SQLite local DB keeps the showcase portable and simple; trade-off is less production parity if target systems use different DB engines.
+- Unit coverage is focused on shared rule helpers rather than every UI function; trade-off is deliberate to keep QA effort concentrated on risk-heavy logic.

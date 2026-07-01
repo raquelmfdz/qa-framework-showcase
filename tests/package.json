@@ -8,8 +8,10 @@
     "test:e2e:ui": "playwright test --config=playwright.config.ts --ui",
     "test:e2e:debug": "playwright test --config=playwright.config.ts --debug",
     "test:integration": "playwright test --config=playwright.integration.config.ts",
+    "test:api": "playwright test --config=playwright.api.config.ts",
     "report:e2e": "playwright show-report playwright-report/e2e",
     "report:integration": "playwright show-report playwright-report/integration",
+    "report:api": "playwright show-report playwright-report/api",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

@@ -13,7 +13,7 @@ type Role = 'user' | 'admin' | 'guest';
  */
 export async function mockSession(page: Page, role: Role = 'user'): Promise<void> {
   if (role === 'guest') {
-    await page.route('**/api/auth/session', (route) =>
+    await page.route('**/api/auth/session**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
     );
     return;
@@ -30,7 +30,7 @@ export async function mockSession(page: Page, role: Role = 'user'): Promise<void
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   };
 
-  await page.route('**/api/auth/session', (route) =>
+  await page.route('**/api/auth/session**', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',

@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../../../../lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../../lib/auth';
-
-// Valid status transitions — keeps bad data out of the DB
-const VALID_STATUSES = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+import { parseOrderId, validateOrderStatusUpdate } from '../../../../../lib/business-rules';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   // Admin only
@@ -18,20 +16,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return new NextResponse('Forbidden', { status: 403 });
   }
 
-  const orderId = Number(params.id);
-  if (!orderId || isNaN(orderId)) {
+  const orderId = parseOrderId(params.id);
+  if (!orderId) {
     return new NextResponse('Invalid order ID', { status: 400 });
   }
 
   const body = await request.json().catch(() => ({}));
-  const status = String(body.status ?? '')
-    .trim()
-    .toUpperCase();
-
-  if (!status || !VALID_STATUSES.includes(status)) {
-    return new NextResponse(`Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}`, {
-      status: 400,
-    });
+  const statusValidation = validateOrderStatusUpdate({ status: body.status });
+  if (!statusValidation.valid) {
+    return new NextResponse(statusValidation.message, { status: 400 });
   }
 
   // Check the order exists before updating
@@ -40,7 +33,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return new NextResponse('Order not found', { status: 404 });
   }
 
-  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, orderId);
+  db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(
+    statusValidation.normalizedStatus,
+    orderId
+  );
 
   return NextResponse.json({ success: true });
 }

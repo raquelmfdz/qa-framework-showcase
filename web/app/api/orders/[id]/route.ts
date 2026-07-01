@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../../../lib/db';
+import { parseOrderId } from '../../../../lib/business-rules';
 
 // Types matching the DB schema
 interface Order {
@@ -23,10 +24,10 @@ interface OrderItem {
 }
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const orderId = Number(params.id);
+  const orderId = parseOrderId(params.id);
 
   // Validate the id param is a real number
-  if (!orderId || isNaN(orderId)) {
+  if (!orderId) {
     return new NextResponse('Invalid order ID', { status: 400 });
   }
 

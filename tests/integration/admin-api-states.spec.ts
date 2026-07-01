@@ -5,13 +5,15 @@ test.describe('Admin Orders — mocked API states', () => {
   test('shows orders list when API returns data', async ({ page, adminOrdersPage }) => {
     await mockSession(page, 'admin');
 
-    await page.route('**/api/admin/orders', (route) =>
+    await page.route('**/api/admin/orders**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([
           {
             id: 1,
+            customer_name: 'Regular',
+            customer_last_name: 'User',
             customer_email: 'user@example.com',
             total: 79.99,
             status: 'PENDING',
@@ -19,6 +21,8 @@ test.describe('Admin Orders — mocked API states', () => {
           },
           {
             id: 2,
+            customer_name: 'Other',
+            customer_last_name: 'Buyer',
             customer_email: 'other@example.com',
             total: 129.99,
             status: 'SHIPPED',
@@ -36,7 +40,7 @@ test.describe('Admin Orders — mocked API states', () => {
   test('shows empty state when no orders exist', async ({ page, adminOrdersPage }) => {
     await mockSession(page, 'admin');
 
-    await page.route('**/api/admin/orders', (route) =>
+    await page.route('**/api/admin/orders**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -69,11 +73,11 @@ test.describe('Admin Orders — mocked API states', () => {
   test('shows error when admin orders API returns 500', async ({ page, adminOrdersPage }) => {
     await mockSession(page, 'admin');
 
-    await page.route('**/api/admin/orders', (route) =>
+    await page.route('**/api/admin/orders**', (route) =>
       route.fulfill({ status: 500, body: 'Internal Server Error' })
     );
 
     await adminOrdersPage.open();
-    await expect(page.getByText(/error|failed to load|something went wrong/i)).toBeVisible();
+    await expect(page.getByText(/unable to load orders/i)).toBeVisible();
   });
 });

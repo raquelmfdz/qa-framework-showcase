@@ -146,4 +146,17 @@ test.describe('Happy Path: Complete User Journey', () => {
       }
     });
   });
+
+  test.describe('Access Control (API auth)', () => {
+    test.use({ storageState: '.auth/user.json' });
+
+    test('regular user cannot access admin orders page', async ({ page }) => {
+      await page.goto('/admin/orders');
+
+      await expect(page.getByRole('heading', { name: /access denied/i })).toBeVisible();
+      await expect(
+        page.getByText(/need an administrator account|administrator account/i)
+      ).toBeVisible();
+    });
+  });
 });

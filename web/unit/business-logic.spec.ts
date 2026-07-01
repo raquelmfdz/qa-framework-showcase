@@ -1,63 +1,90 @@
 import { describe, it, expect } from 'vitest';
+import {
+  VALID_ADMIN_ORDER_STATUSES,
+  normalizeEmail,
+  validateRegistrationInput,
+  parseOrderId,
+  normalizeOrderStatus,
+  isValidAdminOrderStatus,
+  validateOrderStatusUpdate,
+  isValidZipCode,
+  calculateCartTotal,
+} from '../lib/business-rules';
 
 /**
- * Unit tests for pure business logic in web/lib/ and web/utils/.
- *
- * These run with Vitest directly against the app source — no browser,
- * no server, no DB. Fast feedback on logic that doesn't need a runtime.
- *
- * Add tests here as you extract pure functions from your app code.
- * Examples below cover realistic patterns from this codebase.
+ * Unit tests for shared business-rule helpers consumed by API routes.
+ * These are intentionally pure and fast: no DB, no browser, no server.
  */
 
-// ── Order status ──────────────────────────────────────────────────────────────
-// When you have a shared constants/order.ts file, import from there instead.
-const VALID_ORDER_STATUSES = ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'] as const;
-type OrderStatus = (typeof VALID_ORDER_STATUSES)[number];
-
-function isValidOrderStatus(status: string): status is OrderStatus {
-  return (VALID_ORDER_STATUSES as readonly string[]).includes(status);
-}
-
-describe('isValidOrderStatus', () => {
-  it.each(VALID_ORDER_STATUSES)('accepts valid status "%s"', (status) => {
-    expect(isValidOrderStatus(status)).toBe(true);
-  });
-
-  it('rejects an unknown status', () => {
-    expect(isValidOrderStatus('PROCESSING')).toBe(false);
-  });
-
-  it('rejects lowercase (statuses in DB are uppercase)', () => {
-    expect(isValidOrderStatus('pending')).toBe(false);
+describe('normalizeEmail', () => {
+  it('trims and lowercases email input', () => {
+    expect(normalizeEmail('  USER@Example.COM  ')).toBe('user@example.com');
   });
 });
 
-// ── Price formatting ──────────────────────────────────────────────────────────
-// Mirrors how prices from the DB (REAL) should be displayed in the UI.
-function formatPrice(amount: number): string {
-  return `$${amount.toFixed(2)}`;
-}
-
-describe('formatPrice', () => {
-  it('formats an integer correctly', () => {
-    expect(formatPrice(79)).toBe('$79.00');
+describe('validateRegistrationInput', () => {
+  it('rejects missing email/password', () => {
+    const result = validateRegistrationInput({ email: '', password: '' });
+    expect(result).toEqual({ valid: false, message: 'Email and password are required' });
   });
 
-  it('formats a float correctly', () => {
-    expect(formatPrice(129.99)).toBe('$129.99');
+  it('rejects invalid email format', () => {
+    const result = validateRegistrationInput({ email: 'bad-email', password: 'Password1!' });
+    expect(result).toEqual({ valid: false, message: 'Invalid email address' });
   });
 
-  it('rounds to 2 decimal places', () => {
-    expect(formatPrice(19.999)).toBe('$20.00');
+  it('rejects short password', () => {
+    const result = validateRegistrationInput({ email: 'user@example.com', password: '123' });
+    expect(result).toEqual({ valid: false, message: 'Password must be at least 6 characters' });
+  });
+
+  it('accepts valid registration values', () => {
+    const result = validateRegistrationInput({ email: 'USER@example.com', password: 'Password1!' });
+    expect(result).toEqual({ valid: true });
   });
 });
 
-// ── Zip code validation ───────────────────────────────────────────────────────
-// Matches the zip_code column used in users and orders tables (TEXT, 5 digits).
-function isValidZipCode(zip: string): boolean {
-  return /^\d{5}$/.test(zip);
-}
+describe('parseOrderId', () => {
+  it('parses valid numeric ids', () => {
+    expect(parseOrderId('42')).toBe(42);
+  });
+
+  it('rejects NaN and zero-ish values', () => {
+    expect(parseOrderId('abc')).toBeNull();
+    expect(parseOrderId('0')).toBeNull();
+  });
+});
+
+describe('normalizeOrderStatus', () => {
+  it('trims and uppercases status input', () => {
+    expect(normalizeOrderStatus('  shipped ')).toBe('SHIPPED');
+  });
+});
+
+describe('isValidAdminOrderStatus', () => {
+  it.each(VALID_ADMIN_ORDER_STATUSES)('accepts valid status "%s"', (status) => {
+    expect(isValidAdminOrderStatus(status)).toBe(true);
+  });
+
+  it('rejects unsupported status', () => {
+    expect(isValidAdminOrderStatus('RETURNED')).toBe(false);
+  });
+});
+
+describe('validateOrderStatusUpdate', () => {
+  it('accepts valid status and returns normalized value', () => {
+    const result = validateOrderStatusUpdate({ status: 'processing' });
+    expect(result).toEqual({ valid: true, normalizedStatus: 'PROCESSING' });
+  });
+
+  it('rejects unknown status with route-compatible message', () => {
+    const result = validateOrderStatusUpdate({ status: 'returning' });
+    expect(result).toEqual({
+      valid: false,
+      message: 'Invalid status. Must be one of: PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED',
+    });
+  });
+});
 
 describe('isValidZipCode', () => {
   it('accepts a valid 5-digit zip', () => {
@@ -80,14 +107,6 @@ describe('isValidZipCode', () => {
     expect(isValidZipCode('123 5')).toBe(false);
   });
 });
-
-// ── Cart total calculation ────────────────────────────────────────────────────
-// Mirrors the total computed before posting to /api/orders.
-type CartItem = { price: number; quantity: number };
-
-function calculateCartTotal(items: CartItem[]): number {
-  return parseFloat(items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
-}
 
 describe('calculateCartTotal', () => {
   it('returns 0 for an empty cart', () => {

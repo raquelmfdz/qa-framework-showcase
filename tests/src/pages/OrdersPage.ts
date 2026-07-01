@@ -9,7 +9,7 @@ export class OrdersPage extends BasePage {
   constructor(page: Page) {
     super(page);
     this.orderRows = page.getByTestId('order-row');
-    this.noOrdersMessage = page.getByText(/no orders yet|haven't placed any orders/i);
+    this.noOrdersMessage = page.getByText(/no orders found/i);
   }
 
   async open(): Promise<void> {
@@ -17,6 +17,6 @@ export class OrdersPage extends BasePage {
   }
 
   orderRowById(orderId: string): Locator {
-    return this.orderRows.filter({ hasText: new RegExp(`Order\\s+#${orderId}\\b`) });
+    return this.orderRows.filter({ hasText: `Order #${orderId}` });
   }
 }

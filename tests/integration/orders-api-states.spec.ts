@@ -7,7 +7,7 @@ test.describe('Order History — mocked API states', () => {
   });
 
   test('shows no-orders message when API returns empty array', async ({ page, ordersPage }) => {
-    await page.route('**/api/orders', (route) =>
+    await page.route('**/api/orders**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -20,7 +20,7 @@ test.describe('Order History — mocked API states', () => {
   });
 
   test('renders order list from API response', async ({ page, ordersPage }) => {
-    await page.route('**/api/orders', (route) =>
+    await page.route('**/api/orders**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -37,16 +37,16 @@ test.describe('Order History — mocked API states', () => {
   });
 
   test('shows error state when orders API returns 500', async ({ page, ordersPage }) => {
-    await page.route('**/api/orders', (route) =>
+    await page.route('**/api/orders**', (route) =>
       route.fulfill({ status: 500, body: 'Internal Server Error' })
     );
 
     await ordersPage.open();
-    await expect(page.getByText(/error|failed to load|something went wrong/i)).toBeVisible();
+    await expect(page.getByText(/unable to load orders/i)).toBeVisible();
   });
 
   test('shows PENDING status badge for pending orders', async ({ page, ordersPage }) => {
-    await page.route('**/api/orders', (route) =>
+    await page.route('**/api/orders**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',

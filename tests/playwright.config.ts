@@ -9,7 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
  * E2E config: tests hit a REAL backend (real DB, real NextAuth session).
  *
  * Projects:
- *  - setup      : runs auth.setup.ts once, generates .auth/admin.json & .auth/user.json
+ *  - setup      : runs e2e/setup/auth.setup.ts once, generates .auth/admin.json & .auth/user.json
  *  - as-user    : all tests under e2e/ except auth/ and admin/, with USER session
  *  - as-admin   : tests under e2e/admin/, with admin session
  *  - as-guest   : tests under e2e/auth/ and e2e/catalog/ (no session needed)
@@ -43,14 +43,14 @@ export default defineConfig({
     // ── 1. Auth setup (runs first, no storageState dependency) ──────────────
     {
       name: 'setup',
-      testMatch: /auth\/auth\.setup\.ts/,
+      testMatch: /e2e\/setup\/auth\.setup\.ts/,
     },
 
     // ── 2. Tests as an authenticated regular USER ────────────────────────────
     {
       name: 'as-user',
       dependencies: ['setup'],
-      testIgnore: [/auth\.setup\.ts/, /e2e\/auth\//, /e2e\/admin\//],
+      testIgnore: [/e2e\/setup\//, /e2e\/auth\//, /e2e\/admin\//],
       use: {
         ...devices['Desktop Chrome'],
         storageState: '.auth/user.json',
@@ -73,7 +73,6 @@ export default defineConfig({
       name: 'as-guest',
       dependencies: ['setup'],
       testMatch: [/e2e\/auth\//, /e2e\/catalog\//],
-      testIgnore: /auth\.setup\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         // No storageState — browser starts with no session cookie

@@ -2,62 +2,43 @@ import { test, expect } from '../src/fixtures/pages.fixture';
 import { mockSession } from '../src/helpers/mock-session';
 
 /**
- * Catalog integration tests: exercise the ProductGrid UI against mocked
- * API responses that would be hard/slow to reproduce with a real DB.
+ * Catalog integration tests against the rendered home page.
+ * Home is server-rendered from DB queries (not client fetch /api/products),
+ * so these checks focus on visible behavior: cards, category filtering,
+ * and pagination controls.
  */
-test.describe('Catalog — mocked API states', () => {
-  test('shows error state when /api/products returns 500', async ({ page, homePage }) => {
+test.describe('Catalog — rendered page behavior', () => {
+  test('shows catalog cards and pagination controls on home', async ({ page, homePage }) => {
     await mockSession(page, 'guest');
-    await page.route('**/api/products', (route) =>
-      route.fulfill({ status: 500, body: 'Internal Server Error' })
-    );
 
     await homePage.open();
 
-    // Expect some error feedback — adjust text to match your actual error UI
-    await expect(page.getByText(/something went wrong|failed to load|error/i)).toBeVisible();
+    await expect(homePage.productCards.first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: /pagination/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'All' })).toBeVisible();
   });
 
-  test('shows empty state when /api/products returns empty array', async ({ page, homePage }) => {
+  test('applies category query filter and keeps category context in pagination links', async ({
+    page,
+    homePage,
+  }) => {
     await mockSession(page, 'guest');
-    await page.route('**/api/products', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      })
-    );
 
     await homePage.open();
 
-    await expect(homePage.productCards).toHaveCount(0);
-    await expect(page.getByText(/no products|nothing here/i)).toBeVisible();
-  });
+    const categoryLink = page.locator('a[href*="/?category="]').filter({ hasText: /./ }).first();
+    const href = await categoryLink.getAttribute('href');
 
-  test('renders only the products returned by the API', async ({ page, homePage }) => {
-    await mockSession(page, 'guest');
-    const mockProducts = [
-      {
-        id: 1,
-        name: 'Mock Backpack',
-        price: 49.99,
-        description: 'Test',
-        stock: 10,
-        image_url: '',
-        category: 'Outdoor',
-      },
-    ];
+    await categoryLink.click();
+    await expect(page).toHaveURL(/\?category=/);
+    await expect(homePage.productCards.first()).toBeVisible();
 
-    await page.route('**/api/products', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(mockProducts),
-      })
-    );
-
-    await homePage.open();
-    await expect(homePage.productCards).toHaveCount(1);
-    await expect(homePage.productCardByName('Mock Backpack')).toBeVisible();
+    if (href?.includes('category=')) {
+      const categoryParam = href.split('category=')[1];
+      const encodedCategory = categoryParam?.split('&')[0] ?? '';
+      await expect(
+        page.locator(`nav[aria-label="Pagination"] a[href*="category=${encodedCategory}"]`).first()
+      ).toBeVisible();
+    }
   });
 });

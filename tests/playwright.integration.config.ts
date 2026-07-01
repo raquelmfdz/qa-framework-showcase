@@ -17,13 +17,17 @@ import { baseConfig, BASE_URL } from './playwright.base.config';
  */
 export default defineConfig({
   ...baseConfig,
-  testDir: './e2e',
-  globalSetup: './global-setup.ts',
-  reporter: [['html', { outputFolder: 'playwright-report/e2e', open: 'never' }], ['list']],
+  testDir: './integration',
+  reporter: [['html', { outputFolder: 'playwright-report/integration', open: 'never' }], ['list']],
   webServer: {
     command: process.env.CI ? 'npm run start --workspace=web' : 'npm run dev --workspace=web',
     cwd: path.resolve(__dirname, '..'),
     url: BASE_URL,
+    env: {
+      ...process.env,
+      NEXTAUTH_URL: BASE_URL,
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'playwright-local-secret',
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: 'ignore',

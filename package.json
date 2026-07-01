@@ -22,6 +22,7 @@
     "start": "dotenv -e .env -- npm run start --workspace=web",
     "seed": "dotenv -e .env -- npm run seed --workspace=web",
     "test:unit": "npm run test:unit --workspace=web",
+    "test:api": "dotenv -e .env -- npm run test:api --workspace=tests",
     "test:integration": "dotenv -e .env -- npm run test:integration --workspace=tests",
     "test:e2e": "dotenv -e .env -- npm run test:e2e --workspace=tests",
     "test:a11y": "dotenv -e .env -- npm run test:a11y --workspace=non-functional-tests/a11y",

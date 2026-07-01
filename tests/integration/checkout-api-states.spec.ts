@@ -11,15 +11,27 @@ test.describe('Checkout — mocked API states', () => {
   test.beforeEach(async ({ page }) => {
     await mockSession(page, 'user');
 
-    // Seed a non-empty cart response so the checkout page renders
-    await page.route('**/api/cart', (route) =>
+    await page.route('**/api/profile', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          items: [{ productId: 1, name: 'Mock Product', price: 29.99, quantity: 1 }],
-          total: 29.99,
+          name: VALID_CHECKOUT_DETAILS.firstName,
+          last_name: VALID_CHECKOUT_DETAILS.lastName,
+          zip_code: VALID_CHECKOUT_DETAILS.zipCode,
+          address: VALID_CHECKOUT_DETAILS.address,
         }),
+      })
+    );
+
+    // Seed a non-empty cart response so checkout is actionable.
+    await page.route('**/api/cart', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { product_id: 1, name: 'Mock Product', price: 29.99, quantity: 1, image_url: '' },
+        ]),
       })
     );
   });
@@ -33,7 +45,7 @@ test.describe('Checkout — mocked API states', () => {
     await checkoutPage.fillShippingDetails(VALID_CHECKOUT_DETAILS);
     await checkoutPage.placeOrder();
 
-    await expect(page.getByText(/error|failed|try again/i)).toBeVisible();
+    await expect(page.getByTestId('checkout-error')).toContainText(/failed|unable|error|internal/i);
     // Should NOT navigate away on failure
     await expect(page).toHaveURL('/checkout');
   });
@@ -51,7 +63,9 @@ test.describe('Checkout — mocked API states', () => {
     await checkoutPage.fillShippingDetails(VALID_CHECKOUT_DETAILS);
     await checkoutPage.placeOrder();
 
-    await expect(page.getByText(/invalid shipping address|error/i)).toBeVisible();
+    await expect(page.getByTestId('checkout-error')).toContainText(
+      /invalid shipping address|error/i
+    );
   });
 
   test('redirects to success page when order API returns 201', async ({ checkoutPage, page }) => {

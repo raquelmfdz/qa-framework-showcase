@@ -15,7 +15,7 @@ export class AdminOrdersPage extends BasePage {
   }
 
   orderRowById(orderId: string): Locator {
-    return this.orderRows.filter({ hasText: orderId });
+    return this.orderRows.filter({ hasText: `#${orderId}` });
   }
 
   async updateOrderStatus(orderId: string, status: string): Promise<void> {
