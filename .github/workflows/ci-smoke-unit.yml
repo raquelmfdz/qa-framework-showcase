@@ -226,9 +226,9 @@ jobs:
       - name: Run integration tests
         run: |
           if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
-            npm run test:integration
+            npm run test:integration --workspace=tests
           else
-            npm run test:integration -- --grep @smoke
+            npm run test:integration --workspace=tests -- --grep @smoke
           fi
         env:
           CI: true
@@ -284,9 +284,9 @@ jobs:
       - name: Run API tests
         run: |
           if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
-            npm run test:api
+            npm run test:api --workspace=tests
           else
-            npm run test:api -- --grep @smoke
+            npm run test:api --workspace=tests -- --grep @smoke
           fi
         env:
           CI: true
@@ -343,9 +343,9 @@ jobs:
       - name: Run E2E tests
         run: |
           if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
-            npm run test:e2e
+            npm run test:e2e --workspace=tests
           else
-            npm run test:e2e -- --grep @smoke
+            npm run test:e2e --workspace=tests -- --grep @smoke
           fi
         env:
           CI: true
@@ -441,9 +441,9 @@ jobs:
         if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         run: |
           if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
-            npm run test:a11y
+            npm run test:a11y --workspace=non-functional-tests/a11y
           else
-            npm run test:a11y -- --grep @smoke
+            npm run test:a11y --workspace=non-functional-tests/a11y -- --grep @smoke
           fi
         env:
           CI: true
