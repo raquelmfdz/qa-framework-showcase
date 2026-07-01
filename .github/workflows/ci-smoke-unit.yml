@@ -380,22 +380,20 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  # 5. A11Y TESTS: axe-core accessibility checks on critical pages
-  a11y:
-    name: Accessibility Tests
+  # 5. A11Y CHANGE DETECTION: determines if UI-related files changed
+  a11y-changes:
+    name: Detect A11y-Relevant Changes
     runs-on: ubuntu-latest
-    needs: [build, e2e]
-    if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.run_a11y) ||
-      (github.event_name == 'workflow_call' && inputs.run_a11y) ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'pull_request')
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    outputs:
+      related: ${{ steps.filter.outputs.related }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: dorny/paths-filter@v3
-        id: a11y_changes
-        if: github.event_name == 'pull_request'
+        id: filter
         with:
           filters: |
             related:
@@ -407,13 +405,23 @@ jobs:
               - 'web/lib/auth-secret.ts'
               - 'non-functional-tests/a11y/**'
 
+  # 6. A11Y TESTS: axe-core accessibility checks on critical pages
+  a11y:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    needs: [build, e2e, a11y-changes]
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.run_a11y) ||
+      (github.event_name == 'workflow_call' && inputs.run_a11y) ||
+      ((github.event_name == 'push' || github.event_name == 'pull_request') && needs.a11y-changes.outputs.related == 'true')
+    steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         with:
           node-version: '20'
 
       - name: Restore Workspace State
-        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -423,22 +431,18 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Prepare summary artifacts directory
-        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         run: mkdir -p artifacts/summary
 
       - name: Download auth state from e2e setup
-        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         uses: actions/download-artifact@v4
         with:
           name: e2e-auth-state
           path: tests/.auth
 
       - name: Install Playwright Chromium
-        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         run: npx playwright install chromium --with-deps
 
       - name: Run a11y tests
-        if: github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true'
         run: |
           if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
             npm run test:a11y --workspace=non-functional-tests/a11y
@@ -450,7 +454,7 @@ jobs:
           PW_JSON_REPORT_FILE: ../../artifacts/summary/a11y.json
 
       - name: Upload a11y report
-        if: always() && (github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true')
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: a11y-report
@@ -458,7 +462,7 @@ jobs:
           retention-days: 14
 
       - name: Upload a11y summary data
-        if: always() && (github.event_name != 'pull_request' || steps.a11y_changes.outputs.related == 'true')
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: summary-a11y
@@ -466,7 +470,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  # 6. K6 LOAD TESTS: smoke only in CI; full ramp is a manual/scheduled run
+  # 7. K6 LOAD TESTS: smoke only in CI; full ramp is a manual/scheduled run
   load:
     name: Load Tests (Smoke)
     runs-on: ubuntu-latest
@@ -539,6 +543,13 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs: [unit, integration, api, e2e, a11y, load]
+    env:
+      UNIT_JOB_RESULT: ${{ needs.unit.result }}
+      INTEGRATION_JOB_RESULT: ${{ needs.integration.result }}
+      API_JOB_RESULT: ${{ needs.api.result }}
+      E2E_JOB_RESULT: ${{ needs.e2e.result }}
+      A11Y_JOB_RESULT: ${{ needs.a11y.result }}
+      LOAD_JOB_RESULT: ${{ needs.load.result }}
     steps:
       - uses: actions/checkout@v4
 

@@ -297,31 +297,37 @@ const sections = [
     title: 'E2E',
     file: path.join(summaryDir, 'e2e.json'),
     parser: parsePlaywrightReport,
+    jobResultEnv: 'E2E_JOB_RESULT',
   },
   {
     title: 'Integration',
     file: path.join(summaryDir, 'integration.json'),
     parser: parsePlaywrightReport,
+    jobResultEnv: 'INTEGRATION_JOB_RESULT',
   },
   {
     title: 'API',
     file: path.join(summaryDir, 'api.json'),
     parser: parsePlaywrightReport,
+    jobResultEnv: 'API_JOB_RESULT',
   },
   {
     title: 'Unit',
     file: path.join(summaryDir, 'unit.json'),
     parser: parseVitestJson,
+    jobResultEnv: 'UNIT_JOB_RESULT',
   },
   {
     title: 'A11y',
     file: path.join(summaryDir, 'a11y.json'),
     parser: parsePlaywrightReport,
+    jobResultEnv: 'A11Y_JOB_RESULT',
   },
   {
     title: 'Performance',
     file: path.join(summaryDir, 'performance.json'),
     render: renderK6Summary,
+    jobResultEnv: 'LOAD_JOB_RESULT',
   },
 ];
 
@@ -330,6 +336,10 @@ output.push('## Test Summary by Suite');
 output.push('');
 
 for (const section of sections) {
+  if (section.jobResultEnv && process.env[section.jobResultEnv] === 'skipped') {
+    continue;
+  }
+
   const report = readJson(section.file);
   output.push(`### ${section.title}`);
   if (section.render) {
