@@ -149,25 +149,23 @@ npm run test:a11y
 
 ## CI Modes and Manual Layer Selection
 
-CI execution supports automatic runs, one manual run form, and a nightly full suite:
+This repository uses a common pattern for real-world CI setups: keep the default PR/commit path fast, and reserve the heavier matrix for scheduled or manual full runs.
 
 - Push/PR runs: optimized default CI.
   - Always runs full lint, typecheck, build, and unit tests.
   - Runs smoke-only subsets for Playwright API, integration, and E2E (`@smoke`).
-  - Runs a11y smoke on `main` pushes and on PRs that touch UI/auth paths.
-  - Does not run load tests on push/PR.
+  - Runs a11y only when the PR/Push path is explicitly eligible for UI-related checks (for example, PRs that touch UI/auth/a11y files).
+  - Does not run load/performance tests on push/PR.
 
 - Manual run (`Run workflow` on `.github/workflows/ci-smoke-unit.yml`):
-  - `test_scope`: choose `smoke` or `full`.
-  - Layer checkboxes (default checked): `run_unit`, `run_integration`, `run_api`, `run_e2e`, `run_a11y`, `run_load`.
-  - Keep all checked to run everything, or uncheck layers you want to skip.
-
-- PR a11y behavior (inside `.github/workflows/ci-smoke-unit.yml`):
-  - On pull requests, a11y smoke runs only when related UI/auth/a11y files change.
-  - Non-related PRs skip the a11y execution steps.
+  - `test_scope` defaults to `smoke`.
+  - In this default smoke mode, the workflow runs the lighter CI path: full unit tests plus smoke-level API/integration/E2E suites.
+  - Accessibility and performance stay skipped unless you switch to `full` mode.
+  - Layer checkboxes are available for advanced runs, but the intended default is to keep CI lightweight and use the full path only when needed.
 
 - Nightly full run (`.github/workflows/nightly-full-suite.yml`):
-  - Runs full unit/API/integration/E2E/a11y/load with no user inputs.
+  - Calls the reusable workflow in `full` mode.
+  - Runs the full matrix: unit, API, integration, E2E, accessibility, and load/performance.
 
 Notes:
 
@@ -232,8 +230,8 @@ npm run report:e2e
 ## Performance Testing
 
 - K6 tests are API and page-level load tests, not browser-based — fast and low-cost to run.
-- **`smoke.js`** runs in CI on every push: 1 VU for 30 seconds, validates all critical endpoints respond correctly under minimal load.
-- **`baseline-ramp.js`** is a manual or scheduled run: ramps to 10 VUs to establish p95 latency baselines and detect degradation over time.
+- **`smoke.js`** is used for the lightweight CI path when the workflow is run in smoke mode: 1 VU for 30 seconds, validating that critical endpoints respond correctly under minimal load.
+- **`baseline-ramp.js`** is used for the full/manual/nightly path: ramps to 10 VUs to establish p95 latency baselines and detect degradation over time.
 - Thresholds enforced: p95 response time under 500–600ms, error rate under 1%.
 - Auth-protected endpoint guardrails are included to verify 401/403 responses hold under load.
 

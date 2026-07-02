@@ -384,16 +384,17 @@ jobs:
   a11y-changes:
     name: Detect A11y-Relevant Changes
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
     outputs:
-      related: ${{ steps.filter.outputs.related }}
+      related: ${{ steps.resolve.outputs.related }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: dorny/paths-filter@v3
-        id: filter
+      - id: filter
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: dorny/paths-filter@v3
         with:
           filters: |
             related:
@@ -405,15 +406,30 @@ jobs:
               - 'web/lib/auth-secret.ts'
               - 'non-functional-tests/a11y/**'
 
+      - id: resolve
+        if: always()
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" ]]; then
+            echo "related=${{ steps.filter.outputs.related }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "workflow_call" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ inputs.test_scope }}" == "full" ]]; then
+              echo "related=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "related=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
   # 6. A11Y TESTS: axe-core accessibility checks on critical pages
   a11y:
     name: Accessibility Tests
     runs-on: ubuntu-latest
     needs: [build, e2e, a11y-changes]
     if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.run_a11y) ||
-      (github.event_name == 'workflow_call' && inputs.run_a11y) ||
-      ((github.event_name == 'push' || github.event_name == 'pull_request') && needs.a11y-changes.outputs.related == 'true')
+      ((github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') &&
+       inputs.run_a11y &&
+       inputs.test_scope == 'full') ||
+      ((github.event_name == 'push' || github.event_name == 'pull_request') &&
+       needs.a11y-changes.outputs.related == 'true')
     steps:
       - uses: actions/checkout@v4
 
@@ -476,8 +492,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.run_load) ||
-      (github.event_name == 'workflow_call' && inputs.run_load)
+      ((github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') &&
+       inputs.run_load &&
+       inputs.test_scope == 'full')
     steps:
       - uses: actions/checkout@v4
 
