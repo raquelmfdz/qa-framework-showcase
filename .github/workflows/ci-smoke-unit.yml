@@ -225,7 +225,8 @@ jobs:
 
       - name: Run integration tests
         run: |
-          if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
+          TEST_SCOPE="${{ inputs.test_scope }}"
+          if [[ "$TEST_SCOPE" == "full" ]]; then
             npm run test:integration --workspace=tests
           else
             npm run test:integration --workspace=tests -- --grep @smoke
@@ -283,7 +284,8 @@ jobs:
 
       - name: Run API tests
         run: |
-          if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
+          TEST_SCOPE="${{ inputs.test_scope }}"
+          if [[ "$TEST_SCOPE" == "full" ]]; then
             npm run test:api --workspace=tests
           else
             npm run test:api --workspace=tests -- --grep @smoke
@@ -342,7 +344,8 @@ jobs:
 
       - name: Run E2E tests
         run: |
-          if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
+          TEST_SCOPE="${{ inputs.test_scope }}"
+          if [[ "$TEST_SCOPE" == "full" ]]; then
             npm run test:e2e --workspace=tests
           else
             npm run test:e2e --workspace=tests -- --grep @smoke
@@ -424,12 +427,11 @@ jobs:
     name: Accessibility Tests
     runs-on: ubuntu-latest
     needs: [build, e2e, a11y-changes]
-    if: >-
-      ((github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') &&
-       inputs.run_a11y &&
-       inputs.test_scope == 'full') ||
-      ((github.event_name == 'push' || github.event_name == 'pull_request') &&
-       needs.a11y-changes.outputs.related == 'true')
+    if: |
+      ((github.event_name == 'workflow_dispatch' && inputs.run_a11y && inputs.test_scope == 'full') ||
+       (github.event_name == 'workflow_call' && inputs.run_a11y && inputs.test_scope == 'full') ||
+       (github.event_name == 'push' && needs.a11y-changes.outputs.related == 'true') ||
+       (github.event_name == 'pull_request' && needs.a11y-changes.outputs.related == 'true'))
     steps:
       - uses: actions/checkout@v4
 
@@ -460,7 +462,8 @@ jobs:
 
       - name: Run a11y tests
         run: |
-          if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
+          TEST_SCOPE="${{ inputs.test_scope }}"
+          if [[ "$TEST_SCOPE" == "full" ]]; then
             npm run test:a11y --workspace=non-functional-tests/a11y
           else
             npm run test:a11y --workspace=non-functional-tests/a11y -- --grep @smoke
@@ -491,10 +494,9 @@ jobs:
     name: Load Tests (Smoke)
     runs-on: ubuntu-latest
     needs: [build]
-    if: >-
-      ((github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call') &&
-       inputs.run_load &&
-       inputs.test_scope == 'full')
+    if: |
+      ((github.event_name == 'workflow_dispatch' && inputs.run_load && inputs.test_scope == 'full') ||
+       (github.event_name == 'workflow_call' && inputs.run_load && inputs.test_scope == 'full'))
     steps:
       - uses: actions/checkout@v4
 
