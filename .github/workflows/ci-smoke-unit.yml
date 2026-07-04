@@ -42,46 +42,6 @@ on:
         required: false
         default: true
         type: boolean
-  workflow_dispatch:
-    inputs:
-      test_scope:
-        description: 'Execution scope'
-        required: true
-        default: smoke
-        type: choice
-        options:
-          - smoke
-          - full
-      run_unit:
-        description: 'Run unit tests'
-        required: false
-        default: true
-        type: boolean
-      run_integration:
-        description: 'Run integration tests'
-        required: false
-        default: true
-        type: boolean
-      run_api:
-        description: 'Run API tests'
-        required: false
-        default: true
-        type: boolean
-      run_e2e:
-        description: 'Run E2E tests'
-        required: false
-        default: true
-        type: boolean
-      run_a11y:
-        description: 'Run accessibility tests'
-        required: false
-        default: true
-        type: boolean
-      run_load:
-        description: 'Run load tests'
-        required: false
-        default: true
-        type: boolean
 
 env:
   BASE_URL: ${{ vars.BASE_URL }}

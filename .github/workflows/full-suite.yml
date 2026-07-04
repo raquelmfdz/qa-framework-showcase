@@ -1,8 +1,9 @@
-name: Nightly Full Test Suite
+name: Full Test Suite
 
 on:
   schedule:
     - cron: '0 2 * * *'
+  workflow_dispatch:
 
 jobs:
   run-full-suite:

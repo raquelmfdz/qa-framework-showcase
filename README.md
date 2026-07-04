@@ -157,14 +157,9 @@ This repository uses a common pattern for real-world CI setups: keep the default
   - Runs a11y only when the PR/Push path is explicitly eligible for UI-related checks (for example, PRs that touch UI/auth/a11y files).
   - Does not run load/performance tests on push/PR.
 
-- Manual run (`Run workflow` on `.github/workflows/ci-smoke-unit.yml`):
-  - `test_scope` defaults to `smoke`.
-  - In this default smoke mode, the workflow runs the lighter CI path: full unit tests plus smoke-level API/integration/E2E suites.
-  - Accessibility and performance stay skipped unless you switch to `full` mode.
-  - Layer checkboxes are available for advanced runs, but the intended default is to keep CI lightweight and use the full path only when needed.
-
-- Nightly full run (`.github/workflows/nightly-full-suite.yml`):
-  - Calls the reusable workflow in `full` mode.
+- Full suite run (`.github/workflows/full-suite.yml`):
+  - Runs automatically every night on a schedule, and can also be triggered manually (`Run workflow`) against any branch.
+  - Calls the reusable `ci-smoke-unit.yml` workflow in `full` mode.
   - Runs the full matrix: unit, API, integration, E2E, accessibility, and load/performance.
 
 Notes:
@@ -231,7 +226,7 @@ npm run report:e2e
 
 - K6 tests are API and page-level load tests, not browser-based — fast and low-cost to run.
 - **`smoke.js`** is used for the lightweight CI path when the workflow is run in smoke mode: 1 VU for 30 seconds, validating that critical endpoints respond correctly under minimal load.
-- **`baseline-ramp.js`** is used for the full/manual/nightly path: ramps to 10 VUs to establish p95 latency baselines and detect degradation over time.
+- **`baseline-ramp.js`** is used for the full-suite (scheduled/manual) path: ramps to 10 VUs to establish p95 latency baselines and detect degradation over time.
 - Thresholds enforced: p95 response time under 500–600ms, error rate under 1%.
 - Auth-protected endpoint guardrails are included to verify 401/403 responses hold under load.
 
