@@ -157,10 +157,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: [build]
-    if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.run_unit) ||
-      (github.event_name == 'workflow_call' && inputs.run_unit) ||
-      (github.event_name != 'workflow_dispatch' && github.event_name != 'workflow_call')
+    if: inputs.test_scope == '' || inputs.run_unit
     steps:
       - uses: actions/checkout@v4
 
@@ -197,10 +194,7 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: [build]
-    if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.run_integration) ||
-      (github.event_name == 'workflow_call' && inputs.run_integration) ||
-      (github.event_name != 'workflow_dispatch' && github.event_name != 'workflow_call')
+    if: inputs.test_scope == '' || inputs.run_integration
     steps:
       - uses: actions/checkout@v4
 
@@ -256,10 +250,7 @@ jobs:
     name: API Tests
     runs-on: ubuntu-latest
     needs: [build]
-    if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.run_api) ||
-      (github.event_name == 'workflow_call' && inputs.run_api) ||
-      (github.event_name != 'workflow_dispatch' && github.event_name != 'workflow_call')
+    if: inputs.test_scope == '' || inputs.run_api
     steps:
       - uses: actions/checkout@v4
 
@@ -316,10 +307,7 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: [build]
-    if: >-
-      (github.event_name == 'workflow_dispatch' && (inputs.run_e2e || inputs.run_a11y)) ||
-      (github.event_name == 'workflow_call' && (inputs.run_e2e || inputs.run_a11y)) ||
-      (github.event_name != 'workflow_dispatch' && github.event_name != 'workflow_call')
+    if: inputs.test_scope == '' || inputs.run_e2e || inputs.run_a11y
     steps:
       - uses: actions/checkout@v4
 
@@ -387,7 +375,6 @@ jobs:
   a11y-changes:
     name: Detect A11y-Relevant Changes
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
     outputs:
       related: ${{ steps.resolve.outputs.related }}
     steps:
@@ -414,7 +401,7 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" ]]; then
             echo "related=${{ steps.filter.outputs.related }}" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event_name }}" == "workflow_call" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          else
             if [[ "${{ inputs.test_scope }}" == "full" ]]; then
               echo "related=true" >> "$GITHUB_OUTPUT"
             else
@@ -428,10 +415,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, e2e, a11y-changes]
     if: |
-      ((github.event_name == 'workflow_dispatch' && inputs.run_a11y && inputs.test_scope == 'full') ||
-       (github.event_name == 'workflow_call' && inputs.run_a11y && inputs.test_scope == 'full') ||
-       (github.event_name == 'push' && needs.a11y-changes.outputs.related == 'true') ||
-       (github.event_name == 'pull_request' && needs.a11y-changes.outputs.related == 'true'))
+      (inputs.run_a11y == true && inputs.test_scope == 'full') ||
+      (github.event_name == 'push' && needs.a11y-changes.outputs.related == 'true') ||
+      (github.event_name == 'pull_request' && needs.a11y-changes.outputs.related == 'true')
     steps:
       - uses: actions/checkout@v4
 
@@ -494,9 +480,7 @@ jobs:
     name: Load Tests (Smoke)
     runs-on: ubuntu-latest
     needs: [build]
-    if: |
-      ((github.event_name == 'workflow_dispatch' && inputs.run_load && inputs.test_scope == 'full') ||
-       (github.event_name == 'workflow_call' && inputs.run_load && inputs.test_scope == 'full'))
+    if: inputs.run_load == true && inputs.test_scope == 'full'
     steps:
       - uses: actions/checkout@v4
 
@@ -541,12 +525,7 @@ jobs:
         run: npx wait-on ${{ env.BASE_URL }} --timeout 60000
 
       - name: Run k6 load scenario
-        run: |
-          if [[ ("${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "workflow_call") && "${{ inputs.test_scope }}" == "full" ]]; then
-            k6 run --summary-export=artifacts/summary/performance.json --env BASE_URL=${{ env.BASE_URL }} non-functional-tests/load/scenarios/baseline-ramp.js
-          else
-            k6 run --summary-export=artifacts/summary/performance.json --env BASE_URL=${{ env.BASE_URL }} non-functional-tests/load/scenarios/smoke.js
-          fi
+        run: k6 run --summary-export=artifacts/summary/performance.json --env BASE_URL=${{ env.BASE_URL }} non-functional-tests/load/scenarios/baseline-ramp.js
 
       - name: Upload performance summary data
         if: always()
